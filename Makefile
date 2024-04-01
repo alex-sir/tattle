@@ -26,7 +26,7 @@ tattle: src/tattle.o src/options.o src/helpers.o
 
 # Run tests
 test: tattle
-	./tattle
+	./tattle -d 3/30/24 -f wtmp -t 20:30 -u user1,user2,user3
 
 # Check for memory leaks
 mem: tattle

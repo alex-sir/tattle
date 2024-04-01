@@ -7,4 +7,11 @@
 #ifndef HELPERS
 #define HELPERS
 
+#include <stdio.h>  // for printf(), fprintf()
+#include <string.h> // for strerror()
+#include <errno.h>  // for errno
+
+void print_err(void);
+void usage(const char *progname);
+
 #endif

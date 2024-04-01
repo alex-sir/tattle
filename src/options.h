@@ -11,4 +11,13 @@
 
 #include "helpers.h"
 
+typedef struct
+{
+    char *login;
+    char *tty;
+    char *log_on;
+    char *log_off;
+    char *from_host;
+} login_record;
+
 #endif
