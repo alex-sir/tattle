@@ -6,13 +6,14 @@
 
 #include <stdio.h>  // for printf()
 #include <stdlib.h> // for exit(), getsubopt(), malloc()
-#include <unistd.h> // for getopt(), sysconf()
+#include <unistd.h> // for pathconf(), sysconf(), getopt()
 #include <string.h> // for strncpy()
 
 #include "options.h"
 #include "helpers.h"
 
 #define DATE_SIZE 9 // mm/dd/yy
+#define PATHNAME_MAX pathconf(".", _PC_PATH_MAX)
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
 #define LOGIN_MAX sysconf(_SC_LOGIN_NAME_MAX)
 #define LOGINS_NUM 100
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
 
     const char *progname = argv[0];
     int opt = 0, date_given = 0, filename_given = 0, time_given = 0, logins_given = 0;
-    char date[DATE_SIZE] = "", filename[FILENAME_MAX], time[TIME_SIZE];
+    char date[DATE_SIZE], filename[PATHNAME_MAX], time[TIME_SIZE];
     char **logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
     if (logins == NULL)
     {
@@ -48,10 +49,6 @@ int main(int argc, char *argv[])
             break;
         case 'f': // filename
             filename_given = 1;
-            if (optarg != 0)
-            {
-                strncpy(filename, optarg, FILENAME_MAX);
-            }
             break;
         case 't': // time
             time_given = 1;
@@ -97,7 +94,14 @@ int main(int argc, char *argv[])
     }
     if (filename_given)
     {
-        strncpy(filename, argv[optind], FILENAME_MAX);
+        if (optind < argc)
+        {
+            strncpy(filename, argv[optind], PATHNAME_MAX);
+        }
+        else
+        {
+            strncpy(filename, "/var/log/wtmp", PATHNAME_MAX);
+        }
         printf("%s\n", filename);
     }
     if (time_given)
