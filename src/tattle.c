@@ -4,19 +4,13 @@
  *  tattle
  */
 
-#include <stdio.h>  // for printf()
-#include <stdlib.h> // for exit(), getsubopt(), malloc()
-#include <unistd.h> // for pathconf(), sysconf(), getopt()
+#include <stdio.h>  // for printf(), fprintf()
+#include <stdlib.h> // for exit, malloc()
+#include <unistd.h> // for getopt()
 #include <string.h> // for strncpy()
 
 #include "options.h"
 #include "helpers.h"
-
-#define DATE_SIZE 9 // mm/dd/yy
-#define PATHNAME_MAX pathconf(".", _PC_PATH_MAX)
-#define TIME_SIZE 6 // HH:MM (24-hour clock)
-#define LOGIN_MAX sysconf(_SC_LOGIN_NAME_MAX)
-#define LOGINS_NUM 100
 
 int main(int argc, char *argv[])
 {
@@ -26,8 +20,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    const char *progname = argv[0];
-    int opt = 0, date_given = 0, filename_given = 0, time_given = 0, logins_given = 0;
+    int opt = 0;
+    int option_given[OPTIONS_NUM] = {0};
     char date[DATE_SIZE], filename[PATHNAME_MAX], time[TIME_SIZE];
     char **logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
     if (logins == NULL)
@@ -36,6 +30,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     int logins_count = 0;
+
     extern char *optarg;
     extern int optind;
     // parse all options given
@@ -43,40 +38,40 @@ int main(int argc, char *argv[])
     {
         switch (opt)
         {
-        case 'd': // date
-            date_given = 1;
+        case 'd': // date (mm/dd/yy)
+            if (check_date(optarg) == -1)
+            {
+                fprintf(stderr, "%s: incorrect date\nTry as 'mm/dd/yy'\n", optarg);
+                free(logins);
+                exit(EXIT_FAILURE);
+            }
+            option_given[OPTION_DATE] = 1;
             strncpy(date, optarg, DATE_SIZE);
             break;
         case 'f': // filename
-            filename_given = 1;
+            option_given[OPTION_FILENAME] = 1;
             break;
-        case 't': // time
-            time_given = 1;
+        case 't': // time (HH:MM) (24-hour clock)
+            if (check_time(optarg) == -1)
+            {
+                fprintf(stderr, "%s: incorrect time\nTry as 'HH:MM' (24-hour clock)\n", optarg);
+                free(logins);
+                exit(EXIT_FAILURE);
+            }
+            option_given[OPTION_TIME] = 1;
             strncpy(time, optarg, TIME_SIZE);
             break;
-        case 'u': // login(s)
-            logins_given = 1;
-            char *subopts = optarg, *value;
-            char *const token[] = {NULL};
-            do
+        case 'u': // login(s) (user1,user2,user3)
+            option_given[OPTION_LOGINS] = 1;
+            if (fill_logins(&logins, &logins_count, optarg) == -1)
             {
-                if (logins_count % LOGINS_NUM == 0 && logins_count != 0)
-                {
-                    logins = (char **)realloc(logins, (logins_count + LOGINS_NUM) * sizeof(char *));
-                    if (logins == NULL)
-                    {
-                        print_err();
-                        free(logins);
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                getsubopt(&subopts, token, &value);
-                logins[logins_count] = value;
-                logins_count++;
-            } while (*subopts != '\0');
+                print_err();
+                free(logins);
+                exit(EXIT_FAILURE);
+            }
             break;
         case '?': // '?': encountered option not in the valid options list
-            usage(progname);
+            usage(argv[0]);
             free(logins);
             exit(EXIT_FAILURE);
         }
@@ -88,11 +83,12 @@ int main(int argc, char *argv[])
     }
 
     // go through all the options
-    if (date_given)
+    if (option_given[OPTION_DATE])
     {
         // date is specified but time is not: report all logins on the date
+        printf("date: %s\n", date);
     }
-    if (filename_given)
+    if (option_given[OPTION_FILENAME])
     {
         if (optind < argc)
         {
@@ -102,17 +98,19 @@ int main(int argc, char *argv[])
         {
             strncpy(filename, "/var/log/wtmp", PATHNAME_MAX);
         }
-        printf("%s\n", filename);
+        printf("filename: %s\n", filename);
     }
-    if (time_given)
+    if (option_given[OPTION_TIME])
     {
         // time is specified but date is not: default to current date
+        printf("time: %s\n", time);
     }
-    if (logins_given)
+    if (option_given[OPTION_LOGINS])
     {
+        printf("logins: ");
         for (size_t i = 0; i < logins_count; i++)
         {
-            printf("%s\n", logins[i]);
+            i != logins_count - 1 ? printf("%s,", logins[i]) : printf("%s\n", logins[i]);
         }
     }
 

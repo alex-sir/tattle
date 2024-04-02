@@ -11,7 +11,7 @@
 #include <string.h> // for strerror()
 #include <errno.h>  // for errno
 
-void print_err(void);
-void usage(const char *progname);
+extern void print_err(void);
+extern void usage(const char *progname);
 
 #endif
