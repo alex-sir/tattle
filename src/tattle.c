@@ -12,8 +12,16 @@
 #include "options.h"
 #include "helpers.h"
 
+#define MAX_ARGS 9
+
 int main(int argc, char *argv[])
 {
+    if (argc > MAX_ARGS)
+    {
+        fprintf(stderr, "tattle: too many arguments\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (LOGIN_MAX == -1)
     {
         print_err();
@@ -41,7 +49,7 @@ int main(int argc, char *argv[])
         case 'd': // date (mm/dd/yy)
             if (check_date(optarg) == -1)
             {
-                fprintf(stderr, "%s: incorrect date\nTry as 'mm/dd/yy'\n", optarg);
+                fprintf(stderr, "%s: incorrect date\nTry as 'mm/dd/yy'.\n", optarg);
                 free(logins);
                 exit(EXIT_FAILURE);
             }
@@ -54,7 +62,7 @@ int main(int argc, char *argv[])
         case 't': // time (HH:MM) (24-hour clock)
             if (check_time(optarg) == -1)
             {
-                fprintf(stderr, "%s: incorrect time\nTry as 'HH:MM' (24-hour clock)\n", optarg);
+                fprintf(stderr, "%s: incorrect time\nTry as 'HH:MM' (24-hour clock).\n", optarg);
                 free(logins);
                 exit(EXIT_FAILURE);
             }
@@ -63,7 +71,8 @@ int main(int argc, char *argv[])
             break;
         case 'u': // login(s) (user1,user2,user3)
             option_given[OPTION_LOGINS] = 1;
-            if (fill_logins(&logins, &logins_count, optarg) == -1)
+            logins_count = fill_logins(&logins, optarg);
+            if (logins_count == -1)
             {
                 print_err();
                 free(logins);

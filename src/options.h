@@ -7,9 +7,13 @@
 #ifndef OPTIONS
 #define OPTIONS
 
+#define __USE_XOPEN
+#define _GNU_SOURCE
+
 #include <stdio.h>  // for printf()
 #include <stdlib.h> // for realloc(), getsubopt()
 #include <unistd.h> // for pathconf(), sysconf()
+#include <time.h>   // for strptime()
 
 #include "helpers.h"
 
@@ -37,8 +41,27 @@ typedef struct
     char *from_host;
 } login_record;
 
+/**
+ * @brief validate the format of a date string as mm/dd/yy
+ *
+ * @param date date string to validate
+ * @return int 0: valid date format | -1: invalid date format
+ */
 extern int check_date(const char *date);
+/**
+ * @brief validate the format of a time string as HH:MM (24-hour clock)
+ *
+ * @param time time string to validate
+ * @return int 0: valid time format | -1: invalid time format
+ */
 extern int check_time(const char *time);
-extern int fill_logins(char ***logins, int *logins_count, char *optarg);
+/**
+ * @brief fill an array with login name strings
+ *
+ * @param logins address to an array of login name strings
+ * @param optarg command-line argument from getopt() specifying the logins
+ * @return int number of logins filled | -1: logins fill unsuccessful
+ */
+extern int fill_logins(char ***logins, char *optarg);
 
 #endif

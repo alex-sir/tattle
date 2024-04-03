@@ -11,7 +11,15 @@
 #include <string.h> // for strerror()
 #include <errno.h>  // for errno
 
+/**
+ * @brief print an error message
+ */
 extern void print_err(void);
+/**
+ * @brief print a message informing about the use of the program
+ *
+ * @param progname name of the running program
+ */
 extern void usage(const char *progname);
 
 #endif
