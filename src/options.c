@@ -6,6 +6,21 @@
 
 #include "options.h"
 
+int init_options(Options *options)
+{
+    strncpy(options->date, "", DATE_SIZE);
+    strncpy(options->filename, "", PATHNAME_MAX);
+    strncpy(options->time, "", TIME_SIZE);
+    options->logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
+    if (options->logins == NULL)
+    {
+        return -1;
+    }
+    options->logins_count = 0;
+
+    return 0;
+}
+
 int check_date(const char *date)
 {
     struct tm tm;
@@ -52,4 +67,82 @@ int fill_logins(char ***logins, char *optarg)
     } while (*subopts != '\0');
 
     return logins_count;
+}
+
+int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg)
+{
+    switch (opt)
+    {
+    case 'd': // date (mm/dd/yy)
+        if (check_date(optarg) == -1)
+        {
+            fprintf(stderr, "%s: invalid date\nTry as 'mm/dd/yy'.\n", optarg);
+            return -1;
+        }
+        options_given->date = 1;
+        strncpy(options->date, optarg, DATE_SIZE);
+        break;
+    case 'f': // filename
+        options_given->filename = 1;
+        break;
+    case 't': // time (HH:MM) (24-hour clock)
+        if (check_time(optarg) == -1)
+        {
+            fprintf(stderr, "%s: invalid time\nTry as 'HH:MM' (24-hour clock).\n", optarg);
+            return -1;
+        }
+        options_given->time = 1;
+        strncpy(options->time, optarg, TIME_SIZE);
+        break;
+    case 'u': // login(s) (user1,user2,user3)
+        options_given->logins = 1;
+        options->logins_count = fill_logins(&options->logins, optarg);
+        if (options->logins_count == -1)
+        {
+            print_err();
+            return -1;
+        }
+        break;
+    case '?': // '?': encountered option not in the valid options list
+        return -1;
+    }
+
+    return 0;
+}
+
+int run_options(Options_Given *options_given, Options *options)
+{
+    if (options_given->date)
+    {
+        // date is specified but time is not: report all logins on the date
+        printf("date: %s\n", options->date);
+    }
+    if (options_given->filename)
+    {
+        // TODO: put this into a function (maybe in main)
+        // if (optind < argc)
+        // {
+        //     strncpy(options.filename, argv[optind], PATHNAME_MAX);
+        // }
+        // else
+        // {
+        //     strncpy(options.filename, "/var/log/wtmp", PATHNAME_MAX);
+        // }
+        printf("filename: %s\n", options->filename);
+    }
+    if (options_given->time)
+    {
+        // time is specified but date is not: default to current date
+        printf("time: %s\n", options->time);
+    }
+    if (options_given->logins)
+    {
+        printf("logins: ");
+        for (size_t i = 0; i < options->logins_count; i++)
+        {
+            i != options->logins_count - 1 ? printf("%s,", options->logins[i]) : printf("%s\n", options->logins[i]);
+        }
+    }
+
+    return 0;
 }

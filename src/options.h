@@ -7,30 +7,41 @@
 #ifndef OPTIONS
 #define OPTIONS
 
+// gets rid of some weird warnings with library functions
 #define __USE_XOPEN
 #define _GNU_SOURCE
 
-#include <stdio.h>  // for printf()
+#include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
-#include <unistd.h> // for pathconf(), sysconf()
+#include <string.h> // for strncpy()
 #include <time.h>   // for strptime()
 
 #include "helpers.h"
 
-// for array that will hold ints representing if an option is given
-#define OPTIONS_NUM 4
-#define OPTION_DATE 0
-#define OPTION_FILENAME 1
-#define OPTION_TIME 2
-#define OPTION_LOGINS 3
-
 // sizes of strings for options arguments
 #define DATE_SIZE 9 // mm/dd/yy
-#define PATHNAME_MAX pathconf(".", _PC_PATH_MAX)
+#define PATHNAME_MAX 4096
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
-#define LOGIN_MAX sysconf(_SC_LOGIN_NAME_MAX)
+#define LOGIN_MAX 32
 
 #define LOGINS_NUM 100
+
+typedef struct
+{
+    int date;
+    int filename;
+    int time;
+    int logins;
+} Options_Given;
+
+typedef struct
+{
+    char date[DATE_SIZE];
+    char filename[PATHNAME_MAX];
+    char time[TIME_SIZE];
+    char **logins;
+    int logins_count;
+} Options;
 
 typedef struct
 {
@@ -41,6 +52,7 @@ typedef struct
     char *from_host;
 } login_record;
 
+int init_options(Options *options);
 /**
  * @brief validate the format of a date string as mm/dd/yy
  *
@@ -63,5 +75,7 @@ extern int check_time(const char *time);
  * @return int number of logins filled | -1: logins fill unsuccessful
  */
 extern int fill_logins(char ***logins, char *optarg);
+extern int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg);
+extern int run_options(Options_Given *options_given, Options *options);
 
 #endif

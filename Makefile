@@ -30,7 +30,7 @@ test: tattle
 
 # Check for memory leaks
 mem: tattle
-	valgrind --leak-check=full --show-leak-kinds=all ./tattle -d 3/30/24 -f wtmp -t 20:30 -u user1,user2,user3
+	valgrind --leak-check=full --show-leak-kinds=all -s ./tattle -d 3/30/24 -f wtmp -t 20:30 -u user1,user2,user3
 
 # Remove all files that can be reconstructed through "make"
 .PHONY: immaculate
