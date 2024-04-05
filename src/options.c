@@ -6,10 +6,10 @@
 
 #include "options.h"
 
-int init_options(Options *options)
+int options_init(Options *options)
 {
     strncpy(options->date, "", DATE_SIZE);
-    strncpy(options->filename, "", PATHNAME_MAX);
+    strncpy(options->filename, "/var/log/wtmp", PATHNAME_MAX);
     strncpy(options->time, "", TIME_SIZE);
     options->logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
     if (options->logins == NULL)
@@ -84,6 +84,10 @@ int check_options(Options_Given *options_given, Options *options, const char opt
         break;
     case 'f': // filename
         options_given->filename = 1;
+        if (optarg)
+        {
+            strncpy(options->filename, optarg, PATHNAME_MAX);
+        }
         break;
     case 't': // time (HH:MM) (24-hour clock)
         if (check_time(optarg) == -1)
@@ -119,15 +123,6 @@ int run_options(Options_Given *options_given, Options *options)
     }
     if (options_given->filename)
     {
-        // TODO: put this into a function (maybe in main)
-        // if (optind < argc)
-        // {
-        //     strncpy(options.filename, argv[optind], PATHNAME_MAX);
-        // }
-        // else
-        // {
-        //     strncpy(options.filename, "/var/log/wtmp", PATHNAME_MAX);
-        // }
         printf("filename: %s\n", options->filename);
     }
     if (options_given->time)
