@@ -61,8 +61,14 @@ int fill_logins(char ***logins, char *optarg)
                 return -1;
             }
         }
+        // get each of the login strings
         getsubopt(&subopts, token, &value);
-        (*logins)[logins_count] = value;
+        (*logins)[logins_count] = (char *)malloc(UT_NAMESIZE);
+        if ((*logins)[logins_count] == NULL)
+        {
+            return -1;
+        }
+        strncpy((*logins)[logins_count], value, UT_NAMESIZE);
         logins_count++;
     } while (*subopts != '\0');
 
@@ -111,6 +117,11 @@ int check_options(Options_Given *options_given, Options *options, const char opt
         return -1;
     }
 
+    return 0;
+}
+
+int run_options_default(void)
+{
     return 0;
 }
 

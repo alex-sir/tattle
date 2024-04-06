@@ -15,3 +15,13 @@ void usage(const char *progname)
 {
     printf("usage: %s [-d date] [-f filename] [-t time] [-u login[,login]*]\n", progname);
 }
+
+void free_logins(Options *options)
+{
+    for (size_t i = 0; i < options->logins_count; i++)
+    {
+        free(options->logins[i]);
+    }
+
+    free(options->logins);
+}

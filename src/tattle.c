@@ -49,26 +49,30 @@ int main(int argc, char *argv[])
             {
                 usage(argv[0]);
             }
-            free(options.logins);
+            free_logins(&options);
             exit(EXIT_FAILURE);
         }
-        // argument given after a space (e.g. -f file.txt)
+        // filename argument given after a space (e.g. -f file.txt)
         if (options_given.filename && options.filename[0] == '\0' && optind < argc)
         {
             strncpy(options.filename, argv[optind], PATHNAME_MAX);
         }
+        // go through the options the user specified
+        if (run_options(&options_given, &options) == -1)
+        {
+            free_logins(&options);
+            exit(EXIT_FAILURE);
+        }
     }
-
-    /*
-        default option: list all available records for all users on all dates and times
-        otherwise: go through the options the user specified
-    */
-    if (run_options(&options_given, &options) == -1)
+    else // default option: list all available records for all users on all dates and times
     {
-        free(options.logins);
-        exit(EXIT_FAILURE);
+        if (run_options_default() == -1)
+        {
+            free_logins(&options);
+            exit(EXIT_FAILURE);
+        }
     }
 
-    free(options.logins);
+    free_logins(&options);
     exit(EXIT_SUCCESS);
 }

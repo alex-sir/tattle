@@ -14,15 +14,13 @@
 #include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
 #include <string.h> // for strncpy()
-#include <time.h>   // for strptime()
-
-#include "helpers.h"
+#include <time.h>   // for struct tm, strptime()
+#include <utmp.h>
 
 // sizes of strings for options arguments
 #define DATE_SIZE 9 // mm/dd/yy
 #define PATHNAME_MAX 4096
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
-#define LOGIN_MAX 32
 
 #define LOGINS_NUM 100
 
@@ -51,6 +49,8 @@ typedef struct
     char *log_off;
     char *from_host;
 } login_record;
+
+#include "helpers.h"
 
 /**
  * @brief initialize an Options struct with default values
@@ -91,6 +91,12 @@ extern int fill_logins(char ***logins, char *optarg);
  * @return int 0 = options check success | -1 = options check failure
  */
 extern int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg);
+/**
+ * @brief run the default actions of tattle
+ * 
+ * @return int 0 = run success | -1 = run failure
+ */
+extern int run_options_default(void);
 /**
  * @brief run the actions of any options that were specified by the user
  *
