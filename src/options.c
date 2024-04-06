@@ -9,7 +9,7 @@
 int options_init(Options *options)
 {
     strncpy(options->date, "", DATE_SIZE);
-    strncpy(options->filename, "/var/log/wtmp", PATHNAME_MAX);
+    strncpy(options->filename, DEFAULT_FILENAME, PATHNAME_MAX);
     strncpy(options->time, "", TIME_SIZE);
     options->logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
     if (options->logins == NULL)
@@ -120,8 +120,58 @@ int check_options(Options_Given *options_given, Options *options, const char opt
     return 0;
 }
 
+int invalid_user(const char *user)
+{
+    if (strncmp(user, "reboot", UT_NAMESIZE) == 0 ||
+        strncmp(user, "LOGIN", UT_NAMESIZE) == 0 ||
+        strncmp(user, "runlevel", UT_NAMESIZE) == 0 ||
+        strncmp(user, "shutdown", UT_NAMESIZE) == 0 ||
+        strncmp(user, "", UT_NAMESIZE) == 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
 int run_options_default(void)
 {
+    // TODO: get all logins (utmp)
+    // REM: "last" ONLY displays content for BOOT_TIME & USER_PROCESS (perhaps)
+    int login_records_file = open(DEFAULT_FILENAME, O_RDONLY);
+    if (login_records_file == -1)
+    {
+        print_err();
+        return -1;
+    }
+    int logins_count = 0;
+    struct utmp login_record_info;
+    // go through every login record in the file
+    while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
+    {
+        if (invalid_user(login_record_info.ut_user))
+        {
+            continue;
+        }
+
+        printf("username: %s\n", login_record_info.ut_user);
+        switch (login_record_info.ut_type)
+        {
+        case BOOT_TIME: // system reboot: any pending login sessions from the previous session are logged off
+            break;
+        case USER_PROCESS: // log on
+            // a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
+            // watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
+            break;
+        case DEAD_PROCESS: // log off (has same ut_line as log on from USER_PROCESS)
+            break;
+        default: // irrelevant ut_type
+            break;
+        }
+        logins_count++;
+    }
+
+    close(login_records_file);
     return 0;
 }
 

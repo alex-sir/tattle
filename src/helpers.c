@@ -25,3 +25,13 @@ void free_logins(Options *options)
 
     free(options->logins);
 }
+
+void free_login_records(Login_Records *login_records)
+{
+    for (size_t i = 0; i < login_records->count; i++)
+    {
+        free(login_records->records[i]);
+    }
+
+    free(login_records->records);
+}

@@ -7,7 +7,7 @@
 #ifndef HELPERS
 #define HELPERS
 
-#include <stdio.h>  // for printf(), fprintf()
+#include <stdio.h>  // for printf(), fprintf(), fseek(), ftell(), rewind()
 #include <string.h> // for strerror()
 #include <errno.h>  // for errno
 
@@ -29,5 +29,6 @@ extern void usage(const char *progname);
  * @param options address of an Options struct
  */
 extern void free_logins(Options *options);
+extern void free_login_records(Login_Records *login_records);
 
 #endif

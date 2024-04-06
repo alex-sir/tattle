@@ -22,18 +22,19 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // values for the options
-    Options_Given options_given = {0, 0, 0, 0};
-    Options options;
-    if (options_init(&options) == -1)
-    {
-        print_err();
-        exit(EXIT_FAILURE);
-    }
-
+    Login_Records login_records = {(Login_Record **)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record *)), 0};
     // command-line options are given by the user
     if (argc > 1)
     {
+        // values for the options
+        Options_Given options_given = {0, 0, 0, 0};
+        Options options;
+        if (options_init(&options) == -1)
+        {
+            free_login_records(&login_records);
+            print_err();
+            exit(EXIT_FAILURE);
+        }
         int opt = 0;
         extern char *optarg;
         extern int optind;
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
             {
                 usage(argv[0]);
             }
+            free_login_records(&login_records);
             free_logins(&options);
             exit(EXIT_FAILURE);
         }
@@ -60,19 +62,22 @@ int main(int argc, char *argv[])
         // go through the options the user specified
         if (run_options(&options_given, &options) == -1)
         {
+            free_login_records(&login_records);
             free_logins(&options);
             exit(EXIT_FAILURE);
         }
+        free_login_records(&login_records);
+        free_logins(&options);
     }
     else // default option: list all available records for all users on all dates and times
     {
         if (run_options_default() == -1)
         {
-            free_logins(&options);
+            free_login_records(&login_records);
             exit(EXIT_FAILURE);
         }
+        free_login_records(&login_records);
     }
 
-    free_logins(&options);
     exit(EXIT_SUCCESS);
 }

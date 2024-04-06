@@ -11,11 +11,13 @@
 #define __USE_XOPEN
 #define _GNU_SOURCE
 
-#include <stdio.h>  // for printf(), fprintf()
+#include <stdio.h>  // for printf(), fprintf(), fopen(), fclose()
 #include <stdlib.h> // for realloc(), getsubopt()
 #include <string.h> // for strncpy()
+#include <fcntl.h>  // for open()
+#include <unistd.h> // for close(), read()
 #include <time.h>   // for struct tm, strptime()
-#include <utmp.h>
+#include <utmp.h>   // for struct utmp
 
 // sizes of strings for options arguments
 #define DATE_SIZE 9 // mm/dd/yy
@@ -23,6 +25,9 @@
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
 
 #define LOGINS_NUM 100
+#define LOGIN_RECORDS_NUM 100
+
+#define DEFAULT_FILENAME "/var/log/wtmp"
 
 typedef struct
 {
@@ -48,7 +53,13 @@ typedef struct
     char *log_on;
     char *log_off;
     char *from_host;
-} login_record;
+} Login_Record;
+
+typedef struct
+{
+    Login_Record **records;
+    int count;
+} Login_Records;
 
 #include "helpers.h"
 
@@ -91,9 +102,10 @@ extern int fill_logins(char ***logins, char *optarg);
  * @return int 0 = options check success | -1 = options check failure
  */
 extern int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg);
+extern int invalid_user(const char *user);
 /**
  * @brief run the default actions of tattle
- * 
+ *
  * @return int 0 = run success | -1 = run failure
  */
 extern int run_options_default(void);
