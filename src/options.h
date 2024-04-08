@@ -11,7 +11,7 @@
 #define __USE_XOPEN
 #define _GNU_SOURCE
 
-#include <stdio.h>  // for printf(), fprintf(), fopen(), fclose()
+#include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
 #include <string.h> // for strncpy()
 #include <fcntl.h>  // for open()
@@ -23,6 +23,10 @@
 #define DATE_SIZE 9 // mm/dd/yy
 #define PATHNAME_MAX 4096
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
+
+// sizes of strings for a login record
+#define LOG_ON_SIZE 15 // mm/dd/yy HH:MM
+#define LOG_OFF_SIZE 17 // the above or "(still logged in)"
 
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
@@ -48,11 +52,11 @@ typedef struct
 
 typedef struct
 {
-    char *login;
-    char *tty;
-    char *log_on;
-    char *log_off;
-    char *from_host;
+    char login[UT_NAMESIZE];
+    char tty[UT_LINESIZE];
+    char log_on[LOG_ON_SIZE];
+    char log_off[LOG_OFF_SIZE];
+    char from_host[UT_HOSTSIZE];
 } Login_Record;
 
 typedef struct
@@ -102,13 +106,20 @@ extern int fill_logins(char ***logins, char *optarg);
  * @return int 0 = options check success | -1 = options check failure
  */
 extern int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg);
+/**
+ * @brief check if a ut_user from a utmp record is valid for a login record
+ *
+ * @param user ut_user string from a utmp record to check
+ * @return int 0 = valid user | 1 = invalid user
+ */
 extern int invalid_user(const char *user);
 /**
  * @brief run the default actions of tattle
  *
+ * @param login_records address of a Login_Records struct
  * @return int 0 = run success | -1 = run failure
  */
-extern int run_options_default(void);
+extern int run_options_default(Login_Records *login_records);
 /**
  * @brief run the actions of any options that were specified by the user
  *

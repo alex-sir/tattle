@@ -134,7 +134,7 @@ int invalid_user(const char *user)
     return 0;
 }
 
-int run_options_default(void)
+int run_options_default(Login_Records *login_records)
 {
     // TODO: get all logins (utmp)
     // REM: "last" ONLY displays content for BOOT_TIME & USER_PROCESS (perhaps)
@@ -144,7 +144,6 @@ int run_options_default(void)
         print_err();
         return -1;
     }
-    int logins_count = 0;
     struct utmp login_record_info;
     // go through every login record in the file
     while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
@@ -162,13 +161,16 @@ int run_options_default(void)
         case USER_PROCESS: // log on
             // a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
             // watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
+            login_records->records[login_records->count] = (Login_Record *)malloc(sizeof(Login_Record));
+            Login_Record *record = login_records->records[login_records->count];
+            strncpy(record->login, login_record_info.ut_user, UT_NAMESIZE);
+            login_records->count++;
             break;
         case DEAD_PROCESS: // log off (has same ut_line as log on from USER_PROCESS)
             break;
         default: // irrelevant ut_type
             break;
         }
-        logins_count++;
     }
 
     close(login_records_file);

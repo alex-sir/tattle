@@ -4,7 +4,7 @@
  *  tattle
  */
 
-#include <stdio.h>  // for printf()
+#include <stdio.h>  // for fprintf()
 #include <stdlib.h> // for exit, malloc()
 #include <unistd.h> // for getopt()
 #include <string.h> // for strncpy()
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     }
     else // default option: list all available records for all users on all dates and times
     {
-        if (run_options_default() == -1)
+        if (run_options_default(&login_records) == -1)
         {
             free_login_records(&login_records);
             exit(EXIT_FAILURE);

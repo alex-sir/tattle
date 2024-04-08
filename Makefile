@@ -25,11 +25,17 @@ tattle: src/tattle.o src/options.o src/helpers.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 # Run tests
-test: tattle
+testd: tattle # d = default
+	./tattle
+
+testf: tattle # f = full arguments
 	./tattle -d 3/30/24 -f wtmp -t 20:30 -u user1,user2,user3
 
 # Check for memory leaks
-mem: tattle
+memd: tattle
+	valgrind --leak-check=full --show-leak-kinds=all -s ./tattle
+
+memf: tattle
 	valgrind --leak-check=full --show-leak-kinds=all -s ./tattle -d 3/30/24 -f wtmp -t 20:30 -u user1,user2,user3
 
 # Remove all files that can be reconstructed through "make"
