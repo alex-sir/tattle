@@ -16,7 +16,7 @@
 #include <string.h> // for strncpy()
 #include <fcntl.h>  // for open()
 #include <unistd.h> // for close(), read()
-#include <time.h>   // for struct tm, strptime()
+#include <time.h>   // for struct tm, strptime(), strftime(), localtime()
 #include <utmp.h>   // for struct utmp
 
 // sizes of strings for options arguments
@@ -25,13 +25,15 @@
 #define TIME_SIZE 6 // HH:MM (24-hour clock)
 
 // sizes of strings for a login record
-#define LOG_ON_SIZE 15 // mm/dd/yy HH:MM
-#define LOG_OFF_SIZE 17 // the above or "(still logged in)"
+#define LOG_ON_SIZE 15  // mm/dd/yy HH:MM
+#define LOG_OFF_SIZE 18 // the above or "(still logged in)"
 
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-#define DEFAULT_FILENAME "/var/log/wtmp"
+// #define DEFAULT_FILENAME "/var/log/wtmp"
+#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/wtmp" // TEMP: only for testing purposes
+#define DEFAULT_LOG_OFF "(still logged in)"
 
 typedef struct
 {
@@ -113,6 +115,13 @@ extern int check_options(Options_Given *options_given, Options *options, const c
  * @return int 0 = valid user | 1 = invalid user
  */
 extern int invalid_user(const char *user);
+/**
+ * @brief fill a login record with information from a utmp struct
+ *
+ * @param record address to a Login_Record struct
+ * @param login_record_info address to a utmp struct containing information about a login record
+ */
+extern void fill_record(Login_Record *record, struct utmp *login_record_info);
 /**
  * @brief run the default actions of tattle
  *

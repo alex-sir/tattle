@@ -35,5 +35,11 @@ extern void free_logins(Options *options);
  * @param login_records address of a Login_Records struct
  */
 extern void free_login_records(Login_Records *login_records);
+/**
+ * @brief print out a login record
+ *
+ * @param login_record address of a Login_Record struct
+ */
+extern void print_record(Login_Record *login_record);
 
 #endif

@@ -35,3 +35,13 @@ void free_login_records(Login_Records *login_records)
 
     free(login_records->records);
 }
+
+void print_record(Login_Record *login_record)
+{
+    printf("name           contents\n");
+    printf("login          %s\n", login_record->login);
+    printf("tty            %s\n", login_record->tty);
+    printf("log on         %s\n", login_record->log_on);
+    printf("log off        %s\n", login_record->log_off);
+    printf("from host      %s\n\n", login_record->from_host);
+}
