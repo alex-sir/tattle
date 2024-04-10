@@ -8,7 +8,7 @@
 #define HELPERS
 
 #include <stdio.h>  // for printf(), fprintf()
-#include <string.h> // for strerror()
+#include <string.h> // for strerror(), strlen()
 #include <errno.h>  // for errno
 
 #include "options.h"
@@ -36,10 +36,17 @@ extern void free_logins(Options *options);
  */
 extern void free_login_records(Login_Records *login_records);
 /**
- * @brief print out a login record
+ * @brief find the max size strings for all strings in all the login records in a Login_Records struct
  *
- * @param login_record address of a Login_Record struct
+ * @param login_records_sizes address to a Login_Records_Sizes struct where the max sizes will be stored
+ * @param login_records address to a Login_Records struct containing the login records
  */
-extern void print_record(Login_Record *login_record);
+extern void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *login_records);
+/**
+ * @brief print all login records found in login_records
+ *
+ * @param login_records address of a Login_Records struct
+ */
+extern void print_records(Login_Records *login_records);
 
 #endif

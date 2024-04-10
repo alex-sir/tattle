@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
             free_login_records(&login_records);
             exit(EXIT_FAILURE);
         }
+        // TODO: sort the output chronologically by login time in increasing order
+        print_records(&login_records);
         free_login_records(&login_records);
     }
 

@@ -134,6 +134,13 @@ int invalid_user(const char *user)
     return 0;
 }
 
+void get_output_time(char *log, const size_t log_size, int32_t tv_sec)
+{
+    time_t tv_sec_time = tv_sec;
+    struct tm *login_record_time = localtime(&tv_sec_time);
+    strftime(log, log_size, "%D %R", login_record_time);
+}
+
 void fill_record(Login_Record *record, struct utmp *login_record_info)
 {
     strncpy(record->login, login_record_info->ut_user, UT_NAMESIZE);
@@ -141,18 +148,31 @@ void fill_record(Login_Record *record, struct utmp *login_record_info)
 
     // get the log on string
     char log_on[LOG_ON_SIZE];
-    time_t test = login_record_info->ut_tv.tv_sec;
-    struct tm *login_record_time = localtime(&test);
-    strftime(log_on, sizeof(log_on), "%D %R", login_record_time);
+    get_output_time(log_on, LOG_ON_SIZE, login_record_info->ut_tv.tv_sec);
     strncpy(record->log_on, log_on, LOG_ON_SIZE);
 
     strncpy(record->log_off, DEFAULT_LOG_OFF, LOG_OFF_SIZE);
     strncpy(record->from_host, login_record_info->ut_host, UT_HOSTSIZE);
 }
 
+void find_log_off(Login_Records *login_records, struct utmp *login_record_info)
+{
+    for (size_t record = 0; record < login_records->count; record++)
+    {
+        if (strcmp(login_records->records[record]->tty, login_record_info->ut_line) == 0 &&
+            strcmp(login_records->records[record]->log_off, DEFAULT_LOG_OFF) == 0)
+        {
+            // get the log off string
+            char log_off[LOG_OFF_SIZE];
+            get_output_time(log_off, LOG_OFF_SIZE, login_record_info->ut_tv.tv_sec);
+            strncpy(login_records->records[record]->log_off, log_off, LOG_OFF_SIZE);
+            break;
+        }
+    }
+}
+
 int run_options_default(Login_Records *login_records)
 {
-    // TODO: get all logins (utmp)
     // REM: "last" ONLY displays content for BOOT_TIME & USER_PROCESS (perhaps)
     int login_records_file = open(DEFAULT_FILENAME, O_RDONLY);
     if (login_records_file == -1)
@@ -164,11 +184,6 @@ int run_options_default(Login_Records *login_records)
     // go through every login record in the file
     while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
     {
-        if (invalid_user(login_record_info.ut_user))
-        {
-            continue;
-        }
-
         switch (login_record_info.ut_type)
         {
         case BOOT_TIME: // system reboot: any pending login sessions from the previous session are logged off
@@ -176,6 +191,10 @@ int run_options_default(Login_Records *login_records)
         case USER_PROCESS: // log on: create a new login record
             // REM: a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
             // REM: watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
+            if (invalid_user(login_record_info.ut_user))
+            {
+                continue;
+            }
             // login_records filled
             if (login_records->count % LOGIN_RECORDS_NUM == 0 && login_records->count != 0)
             {
@@ -188,10 +207,10 @@ int run_options_default(Login_Records *login_records)
             }
             login_records->records[login_records->count] = (Login_Record *)malloc(sizeof(Login_Record));
             fill_record(login_records->records[login_records->count], &login_record_info);
-            print_record(login_records->records[login_records->count]);
             login_records->count++;
             break;
         case DEAD_PROCESS: // log off (has same ut_line as log on from USER_PROCESS)
+            find_log_off(login_records, &login_record_info);
             break;
         default: // irrelevant ut_type
             break;

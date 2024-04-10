@@ -13,7 +13,7 @@
 
 #include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
-#include <string.h> // for strncpy()
+#include <string.h> // for strncpy(), strcmp()
 #include <fcntl.h>  // for open()
 #include <unistd.h> // for close(), read()
 #include <time.h>   // for struct tm, strptime(), strftime(), localtime()
@@ -32,8 +32,13 @@
 #define LOGIN_RECORDS_NUM 100
 
 // #define DEFAULT_FILENAME "/var/log/wtmp"
-#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/wtmp" // TEMP: only for testing purposes
+// TEMP: only for testing purposes
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
+
+#define PRINT_RECORDS_SPACING 2
 
 typedef struct
 {
@@ -66,6 +71,15 @@ typedef struct
     Login_Record **records;
     int count;
 } Login_Records;
+
+typedef struct
+{
+    int login_max;
+    int tty_max;
+    int log_on_max;
+    int log_off_max;
+    int from_host_max;
+} Login_Records_Sizes;
 
 #include "helpers.h"
 
@@ -116,12 +130,27 @@ extern int check_options(Options_Given *options_given, Options *options, const c
  */
 extern int invalid_user(const char *user);
 /**
+ * @brief get the output time in local time from a log on or log off in a login record
+ *
+ * @param log string to hold the the log time
+ * @param log_size size of the log string
+ * @param tv_sec seconds since the unix epoch (from utmp.ut_tv)
+ */
+extern void get_output_time(char *log, const size_t log_size, int32_t tv_sec);
+/**
  * @brief fill a login record with information from a utmp struct
  *
  * @param record address to a Login_Record struct
  * @param login_record_info address to a utmp struct containing information about a login record
  */
 extern void fill_record(Login_Record *record, struct utmp *login_record_info);
+/**
+ * @brief find the corresponding login record from a log off record type
+ *
+ * @param login_records address to a Login_Records struct containing login records
+ * @param login_record_info address to a utmp struct with a ut_type that causes a log off (DEAD_PROCESS OR BOOT_TIME)
+ */
+extern void find_log_off(Login_Records *login_records, struct utmp *login_record_info);
 /**
  * @brief run the default actions of tattle
  *
