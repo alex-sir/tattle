@@ -33,13 +33,14 @@
 
 // #define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
-#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
+#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
 
 #define PRINT_RECORDS_SPACING 2
 
+// 0 = option not given by user, 1 = option given by user
 typedef struct
 {
     int date;
@@ -48,6 +49,7 @@ typedef struct
     int logins;
 } Options_Given;
 
+// the arguments given by the user
 typedef struct
 {
     char date[DATE_SIZE];
@@ -57,6 +59,7 @@ typedef struct
     int logins_count;
 } Options;
 
+// contains all relevant information to print out for a user login
 typedef struct
 {
     char login[UT_NAMESIZE];
@@ -64,14 +67,19 @@ typedef struct
     char log_on[LOG_ON_SIZE];
     char log_off[LOG_OFF_SIZE];
     char from_host[UT_HOSTSIZE];
+    int is_pending; // indicates whether a corresponding log off has been found (DEAD_PROCESS or BOOT_TIME)
 } Login_Record;
 
+// holds a list of Login_Record
 typedef struct
 {
     Login_Record **records;
     int count;
 } Login_Records;
 
+/* used for printing login records
+    greatest number of characters found for each of the string attributes in Login_Record
+*/
 typedef struct
 {
     int login_max;
@@ -137,6 +145,7 @@ extern int invalid_user(const char *user);
  * @param tv_sec seconds since the unix epoch (from utmp.ut_tv)
  */
 extern void get_output_time(char *log, const size_t log_size, int32_t tv_sec);
+extern void log_off_all(Login_Records *login_records, struct utmp *login_record_info);
 /**
  * @brief fill a login record with information from a utmp struct
  *
