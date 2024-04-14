@@ -50,6 +50,7 @@ int fill_logins(char ***logins, char *optarg)
     int logins_count = 0;
     char *subopts = optarg, *value;
     char *const token[] = {NULL};
+
     do
     {
         // logins array filled up
@@ -145,6 +146,7 @@ void log_off_all(Login_Records *login_records, struct utmp *login_record_info)
 {
     char log_off[LOG_OFF_SIZE];
     get_output_time(log_off, LOG_OFF_SIZE, login_record_info->ut_tv.tv_sec);
+
     for (size_t record = 0; record < login_records->count; record++)
     {
         if (login_records->records[record].is_pending)
@@ -157,7 +159,6 @@ void log_off_all(Login_Records *login_records, struct utmp *login_record_info)
 
 void fill_record(Login_Record *record, struct utmp *login_record_info)
 {
-    
     strncpy(record->login, login_record_info->ut_user, UT_NAMESIZE);
     strncpy(record->tty, login_record_info->ut_line, UT_LINESIZE);
 
@@ -191,9 +192,48 @@ void find_log_off(Login_Records *login_records, struct utmp *login_record_info)
     }
 }
 
-int run_options_default(Login_Records *login_records)
+int check_record_type(Login_Records *login_records, struct utmp *login_record_info)
 {
-    // REM: "last" ONLY displays content for BOOT_TIME & USER_PROCESS (perhaps)
+    // a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
+    switch (login_record_info->ut_type)
+    {
+    case BOOT_TIME: // system reboot: any pending login sessions from the previous session are logged off
+        log_off_all(login_records, login_record_info);
+        break;
+    case USER_PROCESS: // log on: create a new login record
+        if (invalid_user(login_record_info->ut_user))
+        {
+            return 1; // continue
+        }
+
+        // login_records filled
+        if (login_records->count % LOGIN_RECORDS_NUM == 0 && login_records->count != 0)
+        {
+            login_records->records = (Login_Record *)
+                realloc(login_records->records, (login_records->count + LOGIN_RECORDS_NUM) * sizeof(Login_Record));
+            if (login_records->records == NULL)
+            {
+                return -1; // error
+            }
+        }
+        // REM: watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
+        // FIXME: this doesn't work, it gives false positives. maybe try doing at the end after finished with all the records?
+        // find_log_off(login_records, &login_record_info); // look for the rare case of a record with no log off
+        fill_record(&(login_records->records[login_records->count]), login_record_info);
+        login_records->count++;
+        break;
+    case DEAD_PROCESS: // log off (has same ut_line as log on from USER_PROCESS)
+        find_log_off(login_records, login_record_info);
+        break;
+    default: // irrelevant ut_type
+        break;
+    }
+
+    return 0; // ok
+}
+
+int fill_login_records_d(Login_Records *login_records)
+{
     int login_records_file = open(DEFAULT_FILENAME, O_RDONLY);
     if (login_records_file == -1)
     {
@@ -201,42 +241,20 @@ int run_options_default(Login_Records *login_records)
         return -1;
     }
     struct utmp login_record_info;
+    int check_result;
+
     // go through every login record in the file
     while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
     {
-        // a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
-        switch (login_record_info.ut_type)
+        check_result = check_record_type(login_records, &login_record_info);
+        if (check_result == 1)
         {
-        case BOOT_TIME: // system reboot: any pending login sessions from the previous session are logged off
-            log_off_all(login_records, &login_record_info);
-            break;
-        case USER_PROCESS: // log on: create a new login record
-            // REM: watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
-            if (invalid_user(login_record_info.ut_user))
-            {
-                continue;
-            }
-
-            // login_records filled
-            if (login_records->count % LOGIN_RECORDS_NUM == 0 && login_records->count != 0)
-            {
-                login_records->records = (Login_Record *)
-                    realloc(login_records->records, (login_records->count + LOGIN_RECORDS_NUM) * sizeof(Login_Record));
-                if (login_records->records == NULL)
-                {
-                    return -1;
-                }
-            }
-            // FIXME: this doesn't work, it gives false positives. maybe try doing at the end after finished with all the records?
-            // find_log_off(login_records, &login_record_info); // look for the rare case of a record with no log off
-            fill_record(&(login_records->records[login_records->count]), &login_record_info);
-            login_records->count++;
-            break;
-        case DEAD_PROCESS: // log off (has same ut_line as log on from USER_PROCESS)
-            find_log_off(login_records, &login_record_info);
-            break;
-        default: // irrelevant ut_type
-            break;
+            continue;
+        }
+        else if (check_result == -1)
+        {
+            close(login_records_file);
+            return -1;
         }
     }
 
@@ -244,29 +262,76 @@ int run_options_default(Login_Records *login_records)
     return 0;
 }
 
-int run_options(Options_Given *options_given, Options *options)
+int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given)
 {
-    if (options_given->date)
-    {
-        // date is specified but time is not: report all logins on the date
-        printf("date: %s\n", options->date);
-    }
+    int login_records_file;
     if (options_given->filename)
     {
-        printf("filename: %s\n", options->filename);
+        login_records_file = open(options->filename, O_RDONLY);
     }
-    if (options_given->time)
+    else
     {
-        // time is specified but date is not: default to current date
-        printf("time: %s\n", options->time);
+        login_records_file = open(DEFAULT_FILENAME, O_RDONLY);
     }
-    if (options_given->logins)
+    if (login_records_file == -1)
     {
-        // TODO: check for unknown logins using getpwnam(3)
-        printf("logins: ");
-        for (size_t i = 0; i < options->logins_count; i++)
+        print_err();
+        return -1;
+    }
+    struct utmp login_record_info;
+    int check_result;
+
+    // go through every login record in the file
+    while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
+    {
+        // TODO: do user filtering
+        // check_user();
+        check_result = check_record_type(login_records, &login_record_info);
+        if (check_result == 1)
         {
-            i != options->logins_count - 1 ? printf("%s,", options->logins[i]) : printf("%s\n", options->logins[i]);
+            continue;
+        }
+        else if (check_result == -1)
+        {
+            close(login_records_file);
+            return -1;
+        }
+    }
+
+    close(login_records_file);
+    return 0;
+}
+
+int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records,
+                         Options *options, Options_Given *options_given)
+{
+    char current_date[DATE_SIZE] = "";
+    char current_time[TIME_SIZE] = "";
+
+    // TODO: do date and time filtering here
+    for (size_t record = 0; record < login_records->count; record++)
+    {
+        if (options_given->date)
+        {
+            // date is specified but time is not: report all logins on the date
+            // TODO: if a user is still logged in at the date, list them
+            if (strcmp(options->date, current_date) != 0)
+            {
+                // remove the login record
+                continue;
+            }
+        }
+        if (options_given->time)
+        {
+            // time is specified but date is not: default to current date
+            if (strcmp(options->time, current_time) != 0)
+            {
+                continue;
+            }
+        }
+        if (options_given->logins)
+        {
+            // TODO: check for unknown logins using getpwnam(3)
         }
     }
 

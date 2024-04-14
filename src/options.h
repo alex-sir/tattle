@@ -166,20 +166,15 @@ extern void fill_record(Login_Record *record, struct utmp *login_record_info);
  * @param login_record_info address to a utmp struct with a ut_type that causes a log off (DEAD_PROCESS OR BOOT_TIME)
  */
 extern void find_log_off(Login_Records *login_records, struct utmp *login_record_info);
+extern int check_record_type(Login_Records *login_records, struct utmp *login_record_info);
 /**
  * @brief run the default actions of tattle
  *
  * @param login_records address of a Login_Records struct
  * @return int 0 = run success | -1 = run failure
  */
-extern int run_options_default(Login_Records *login_records);
-/**
- * @brief run the actions of any options that were specified by the user
- *
- * @param options_given address of an Options_Given struct containing which options are specified
- * @param options address of an Options struct filled with the values of the specified options
- * @return int 0 = run(s) success | -1 = run(s) failure
- */
-extern int run_options(Options_Given *options_given, Options *options);
+extern int fill_login_records_d(Login_Records *login_records);
+extern int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given);
+extern int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records, Options *options, Options_Given *options_given);
 
 #endif

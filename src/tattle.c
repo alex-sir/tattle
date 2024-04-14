@@ -60,18 +60,23 @@ int main(int argc, char *argv[])
             strncpy(options.filename, argv[optind], PATHNAME_MAX);
         }
         // go through the options the user specified
-        if (run_options(&options_given, &options) == -1)
+        if (fill_login_records(&login_records, &options, &options_given) == -1)
         {
             free(login_records.records);
             free_logins(&options);
             exit(EXIT_FAILURE);
         }
+        Login_Records login_records_ft = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
+        filter_login_records(&login_records_ft, &login_records, &options, &options_given);
+        qsort(login_records_ft.records, login_records_ft.count, sizeof(Login_Record), compare_log_on_times);
+        print_records(&login_records_ft);
         free(login_records.records);
+        free(login_records_ft.records);
         free_logins(&options);
     }
     else // default option: list all available records for all users on all dates and times
     {
-        if (run_options_default(&login_records) == -1)
+        if (fill_login_records_d(&login_records) == -1)
         {
             free(login_records.records);
             exit(EXIT_FAILURE);
