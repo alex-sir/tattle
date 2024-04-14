@@ -7,8 +7,7 @@
 #ifndef OPTIONS
 #define OPTIONS
 
-// gets rid of some weird warnings with library functions
-#define __USE_XOPEN
+// gets rid of some weird warnings with library functions (strftime(), getsubopt())
 #define _GNU_SOURCE
 
 #include <stdio.h>  // for printf(), fprintf()
@@ -68,12 +67,13 @@ typedef struct
     char log_off[LOG_OFF_SIZE];
     char from_host[UT_HOSTSIZE];
     int is_pending; // indicates whether a corresponding log off has been found (DEAD_PROCESS or BOOT_TIME)
+    time_t log_on_time;
 } Login_Record;
 
 // holds a list of Login_Record
 typedef struct
 {
-    Login_Record **records;
+    Login_Record *records;
     int count;
 } Login_Records;
 
@@ -145,6 +145,12 @@ extern int invalid_user(const char *user);
  * @param tv_sec seconds since the unix epoch (from utmp.ut_tv)
  */
 extern void get_output_time(char *log, const size_t log_size, int32_t tv_sec);
+/**
+ * @brief set all login record's "is_pending" value to false (logged off)
+ *
+ * @param login_records address to a Login_Records struct
+ * @param login_record_info address to a utmp struct (usually of BOOT_TIME ut_type)
+ */
 extern void log_off_all(Login_Records *login_records, struct utmp *login_record_info);
 /**
  * @brief fill a login record with information from a utmp struct

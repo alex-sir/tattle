@@ -26,40 +26,27 @@ void free_logins(Options *options)
     free(options->logins);
 }
 
-void free_login_records(Login_Records *login_records)
-{
-    for (size_t record = 0; record < login_records->count; record++)
-    {
-        free(login_records->records[record]);
-    }
-
-    free(login_records->records);
-}
-
 void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *login_records)
 {
     size_t login_size = 0, tty_size = 0, from_host_size = 0;
-    Login_Record *login_record;
     for (size_t record = 0; record < login_records->count; record++)
     {
-        login_record = login_records->records[record];
-
         // login
-        login_size = strlen(login_record->login);
+        login_size = strlen(login_records->records[record].login);
         if (login_size > login_records_sizes->login_max)
         {
             login_records_sizes->login_max = login_size;
         }
 
         // tty
-        tty_size = strlen(login_record->tty);
+        tty_size = strlen(login_records->records[record].tty);
         if (tty_size > login_records_sizes->tty_max)
         {
             login_records_sizes->tty_max = tty_size;
         }
 
         // from_host
-        from_host_size = strlen(login_record->from_host);
+        from_host_size = strlen(login_records->records[record].from_host);
         if (from_host_size > login_records_sizes->from_host_max)
         {
             login_records_sizes->from_host_max = from_host_size;
@@ -82,15 +69,35 @@ void print_records(Login_Records *login_records)
     printf("%-*s", login_records_sizes.tty_max, "tty");
     printf("%-*s", login_records_sizes.log_on_max, "log on");
     printf("%-*s", login_records_sizes.log_off_max, "log off");
-    printf("%-*s\n", login_records_sizes.from_host_max, "from host");
-    Login_Record *login_record;
+    // printf("%-*s\n", login_records_sizes.from_host_max, "from host");
+    printf("%s\n", "from host");
+    // output a row containing the information for a login record
     for (size_t record = 0; record < login_records->count; record++)
     {
-        login_record = login_records->records[record];
-        printf("%-*s", login_records_sizes.login_max, login_record->login);
-        printf("%-*s", login_records_sizes.tty_max, login_record->tty);
-        printf("%-*s", login_records_sizes.log_on_max, login_record->log_on);
-        printf("%-*s", login_records_sizes.log_off_max, login_record->log_off);
-        printf("%-*s\n", login_records_sizes.from_host_max, login_record->from_host);
+        printf("%-*s", login_records_sizes.login_max, login_records->records[record].login);
+        printf("%-*s", login_records_sizes.tty_max, login_records->records[record].tty);
+        printf("%-*s", login_records_sizes.log_on_max, login_records->records[record].log_on);
+        printf("%-*s", login_records_sizes.log_off_max, login_records->records[record].log_off);
+        // printf("%-*s\n", login_records_sizes.from_host_max, login_record->from_host);
+        printf("%s\n", login_records->records[record].from_host);
+    }
+}
+
+int compare_log_on_times(const void *login_record1, const void *login_record2)
+{
+    Login_Record *login1 = (Login_Record *)login_record1;
+    Login_Record *login2 = (Login_Record *)login_record2;
+
+    if (login1->log_on_time > login2->log_on_time)
+    {
+        return 1;
+    }
+    else if (login1->log_on_time < login2->log_on_time)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
     }
 }

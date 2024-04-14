@@ -7,9 +7,13 @@
 #ifndef HELPERS
 #define HELPERS
 
+// gets rid of some weird warnings with library functions (strftime())
+#define _GNU_SOURCE
+
 #include <stdio.h>  // for printf(), fprintf()
 #include <string.h> // for strerror(), strlen()
 #include <errno.h>  // for errno
+#include <time.h>   // for strptime(), mktime()
 
 #include "options.h"
 
@@ -30,12 +34,6 @@ extern void usage(const char *progname);
  */
 extern void free_logins(Options *options);
 /**
- * @brief free all memory related to a Login_Records struct
- *
- * @param login_records address of a Login_Records struct
- */
-extern void free_login_records(Login_Records *login_records);
-/**
  * @brief find the max size strings for all strings in all the login records in a Login_Records struct
  *
  * @param login_records_sizes address to a Login_Records_Sizes struct where the max sizes will be stored
@@ -48,5 +46,15 @@ extern void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Recor
  * @param login_records address of a Login_Records struct
  */
 extern void print_records(Login_Records *login_records);
+/**
+ * @brief ONLY FOR USE WITH qsort() - compare the log on times of two login records (sorted in increasing order)
+ *
+ * @param login_record1 first login record - compared with login_record2
+ * @param login_record2 second login record - compared with login_record1
+ * @return int 1 = login_record1 time > login_record2 time |
+ *            -1 = login_record1 time > login_record2 time |
+ *            0 = login_record1 time == login_record2 time
+ */
+extern int compare_log_on_times(const void *login_record1, const void *login_record2);
 
 #endif
