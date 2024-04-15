@@ -76,6 +76,21 @@ int fill_logins(char ***logins, char *optarg)
     return logins_count;
 }
 
+int verify_logins(Options *options)
+{
+    for (size_t i = 0; i < options->logins_count; i++)
+    {
+        // check that the login is a real login on the system
+        if (getpwnam(options->logins[i]) == NULL)
+        {
+            fprintf(stderr, "tattle: user '%s' not found\n", options->logins[i]);
+            return -1; // error
+        }
+    }
+
+    return 0; // ok
+}
+
 int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg)
 {
     switch (opt)
@@ -111,6 +126,10 @@ int check_options(Options_Given *options_given, Options *options, const char opt
         if (options->logins_count == -1)
         {
             print_err();
+            return -1;
+        }
+        if (verify_logins(options) == -1)
+        {
             return -1;
         }
         break;
@@ -213,6 +232,7 @@ int check_record_type(Login_Records *login_records, struct utmp *login_record_in
                 realloc(login_records->records, (login_records->count + LOGIN_RECORDS_NUM) * sizeof(Login_Record));
             if (login_records->records == NULL)
             {
+                print_err();
                 return -1; // error
             }
         }
@@ -262,6 +282,20 @@ int fill_login_records_d(Login_Records *login_records)
     return 0;
 }
 
+int check_login(Options *options, const char login[])
+{
+    // check if "login" is within the user-specified options->logins
+    for (size_t i = 0; i < options->logins_count; i++)
+    {
+        if (strcmp(options->logins[i], login) == 0)
+        {
+            return 0; // ok
+        }
+    }
+
+    return 1; // continue
+}
+
 int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given)
 {
     int login_records_file;
@@ -279,19 +313,25 @@ int fill_login_records(Login_Records *login_records, Options *options, Options_G
         return -1;
     }
     struct utmp login_record_info;
-    int check_result;
+    int check_record_result, check_login_result;
 
     // go through every login record in the file
     while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
     {
-        // TODO: do user filtering
-        // check_user();
-        check_result = check_record_type(login_records, &login_record_info);
-        if (check_result == 1)
+        if (options_given->logins)
+        {
+            check_login_result = check_login(options, login_record_info.ut_user);
+            if (check_login_result == 1)
+            {
+                continue;
+            }
+        }
+        check_record_result = check_record_type(login_records, &login_record_info);
+        if (check_record_result == 1)
         {
             continue;
         }
-        else if (check_result == -1)
+        else if (check_record_result == -1)
         {
             close(login_records_file);
             return -1;
@@ -317,7 +357,6 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
             // TODO: if a user is still logged in at the date, list them
             if (strcmp(options->date, current_date) != 0)
             {
-                // remove the login record
                 continue;
             }
         }
@@ -328,10 +367,6 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
             {
                 continue;
             }
-        }
-        if (options_given->logins)
-        {
-            // TODO: check for unknown logins using getpwnam(3)
         }
     }
 

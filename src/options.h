@@ -17,6 +17,8 @@
 #include <unistd.h> // for close(), read()
 #include <time.h>   // for struct tm, strptime(), strftime(), localtime()
 #include <utmp.h>   // for struct utmp
+#include <pwd.h>    // for getpwnam()
+#include <errno.h>  // for errno
 
 // sizes of strings for options arguments
 #define DATE_SIZE 9 // mm/dd/yy
@@ -121,6 +123,13 @@ extern int check_time(const char *time);
  */
 extern int fill_logins(char ***logins, char *optarg);
 /**
+ * @brief verify that the list of user-specified logins are real logins on the system
+ *
+ * @param options address to an Options struct
+ * @return int -1 = invalid login found | 0 = logins list ok
+ */
+extern int verify_logins(Options *options);
+/**
  * @brief check all command-line options and corresponding arguments specified by the user
  *
  * @param options_given address of an Options_Given struct containing which options are specified
@@ -166,14 +175,38 @@ extern void fill_record(Login_Record *record, struct utmp *login_record_info);
  * @param login_record_info address to a utmp struct with a ut_type that causes a log off (DEAD_PROCESS OR BOOT_TIME)
  */
 extern void find_log_off(Login_Records *login_records, struct utmp *login_record_info);
+/**
+ * @brief check the ut_type of a login record and run the appropriate actions
+ *
+ * @param login_records address of a Login_Records struct to contain all login records
+ * @param login_record_info address to a utmp struct containing information about the current login record
+ * @return int -1 = error occurred | 0 = ok | 1 = login record is invalid
+ */
 extern int check_record_type(Login_Records *login_records, struct utmp *login_record_info);
 /**
- * @brief run the default actions of tattle
+ * @brief run the default actions of tattle: find and fill all login records found in a wtmp file
  *
- * @param login_records address of a Login_Records struct
+ * @param login_records address of a Login_Records struct to contain all login records
  * @return int 0 = run success | -1 = run failure
  */
 extern int fill_login_records_d(Login_Records *login_records);
+/**
+ * @brief check if a login on a record is within the user-specified logins
+ *
+ * @param options address to an Options struct
+ * @param login login string to check
+ * @return int 0 = login match found | 1 = no match found
+ */
+extern int check_login(Options *options, const char login[]);
+/**
+ * @brief run the actions of tattle when the user specifies options:
+ *        find and fill the appropriate login records found in a wtmp file
+ *
+ * @param login_records address of a Login_Records struct to contain all login records
+ * @param options address of an Options struct containing the options given by the user
+ * @param options_given address of an Options_Given struct containing which options the user specified
+ * @return int 0 = run success | -1 = run failure
+ */
 extern int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given);
 extern int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records, Options *options, Options_Given *options_given);
 

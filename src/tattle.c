@@ -31,13 +31,14 @@ int main(int argc, char *argv[])
         Options options;
         if (options_init(&options) == -1)
         {
-            free(login_records.records);
             print_err();
+            free(login_records.records);
             exit(EXIT_FAILURE);
         }
         int opt = 0;
         extern char *optarg;
         extern int optind;
+
         // parse all options given
         while ((opt = getopt(argc, argv, "d:f::t:u:")) != -1)
         {
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
         {
             strncpy(options.filename, argv[optind], PATHNAME_MAX);
         }
+
         // go through the options the user specified
         if (fill_login_records(&login_records, &options, &options_given) == -1)
         {
@@ -66,12 +68,23 @@ int main(int argc, char *argv[])
             free_logins(&options);
             exit(EXIT_FAILURE);
         }
-        Login_Records login_records_ft = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
-        filter_login_records(&login_records_ft, &login_records, &options, &options_given);
-        qsort(login_records_ft.records, login_records_ft.count, sizeof(Login_Record), compare_log_on_times);
-        print_records(&login_records_ft);
+
+        // filter login records if a time or date is given by the user
+        if (options_given.time || options_given.date)
+        {
+            Login_Records login_records_ft = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
+            filter_login_records(&login_records_ft, &login_records, &options, &options_given);
+            qsort(login_records_ft.records, login_records_ft.count, sizeof(Login_Record), compare_log_on_times);
+            print_records(&login_records_ft);
+            free(login_records_ft.records);
+        }
+        else
+        {
+            qsort(login_records.records, login_records.count, sizeof(Login_Record), compare_log_on_times);
+            print_records(&login_records);
+        }
+
         free(login_records.records);
-        free(login_records_ft.records);
         free_logins(&options);
     }
     else // default option: list all available records for all users on all dates and times
@@ -81,6 +94,7 @@ int main(int argc, char *argv[])
             free(login_records.records);
             exit(EXIT_FAILURE);
         }
+
         qsort(login_records.records, login_records.count, sizeof(Login_Record), compare_log_on_times);
         print_records(&login_records);
         free(login_records.records);
