@@ -12,7 +12,7 @@
 
 #include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
-#include <string.h> // for strncpy(), strcmp()
+#include <string.h> // for strncpy(), memset(), strcmp(), strtok()
 #include <fcntl.h>  // for open()
 #include <unistd.h> // for close(), read()
 #include <time.h>   // for struct tm, strptime(), strftime(), localtime()
@@ -32,9 +32,9 @@
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-#define DEFAULT_FILENAME "/var/log/wtmp"
+// #define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
@@ -200,6 +200,8 @@ extern int fill_login_records_d(Login_Records *login_records);
  * @return int 0 = run success | -1 = run failure
  */
 extern int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given);
+extern int check_date_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[]);
+extern int check_time_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[]);
 /**
  * @brief check if a login on a record is within the user-specified logins
  *
@@ -207,7 +209,7 @@ extern int fill_login_records(Login_Records *login_records, Options *options, Op
  * @param login login string to check
  * @return int 0 = login match found | 1 = no match found
  */
-extern int check_login(Options *options, const char login[]);
+extern int check_login_filter(Options *options, const char login[]);
 /**
  * @brief filter login records based on user-specified options
  *
