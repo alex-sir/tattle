@@ -26,6 +26,23 @@ void free_logins(Options *options)
     free(options->logins);
 }
 
+int login_records_mem(Login_Records *login_records)
+{
+    // login_records filled
+    if (login_records->count % LOGIN_RECORDS_NUM == 0 && login_records->count != 0)
+    {
+        login_records->records = (Login_Record *)
+            realloc(login_records->records, (login_records->count + LOGIN_RECORDS_NUM) * sizeof(Login_Record));
+        if (login_records->records == NULL)
+        {
+            print_err();
+            return -1; // error
+        }
+    }
+
+    return 0;
+}
+
 void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *login_records)
 {
     size_t login_size = 0, tty_size = 0, from_host_size = 0;

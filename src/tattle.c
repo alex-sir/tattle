@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
-        // filter login records if a time or date is given by the user
-        if (options_given.time || options_given.date)
+        // filter login records if a date, time, or a list of logins is given by the user
+        if (options_given.date || options_given.time || options_given.logins)
         {
             Login_Records login_records_ft = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
             filter_login_records(&login_records_ft, &login_records, &options, &options_given);

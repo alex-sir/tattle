@@ -34,6 +34,13 @@ extern void usage(const char *progname);
  */
 extern void free_logins(Options *options);
 /**
+ * @brief check if a Login_Records struct needs to have its dynamic memory reallocated
+ *
+ * @param login_records address to a Login_Records struct
+ * @return int -1 = memory reallocation error | 0 = ok
+ */
+extern int login_records_mem(Login_Records *login_records);
+/**
  * @brief find the max size strings for all strings in all the login records in a Login_Records struct
  *
  * @param login_records_sizes address to a Login_Records_Sizes struct where the max sizes will be stored

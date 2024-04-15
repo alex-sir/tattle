@@ -225,16 +225,9 @@ int check_record_type(Login_Records *login_records, struct utmp *login_record_in
             return 1; // continue
         }
 
-        // login_records filled
-        if (login_records->count % LOGIN_RECORDS_NUM == 0 && login_records->count != 0)
+        if (login_records_mem(login_records) == -1)
         {
-            login_records->records = (Login_Record *)
-                realloc(login_records->records, (login_records->count + LOGIN_RECORDS_NUM) * sizeof(Login_Record));
-            if (login_records->records == NULL)
-            {
-                print_err();
-                return -1; // error
-            }
+            return -1; // error
         }
         // REM: watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
         // FIXME: this doesn't work, it gives false positives. maybe try doing at the end after finished with all the records?
@@ -282,23 +275,10 @@ int fill_login_records_d(Login_Records *login_records)
     return 0;
 }
 
-int check_login(Options *options, const char login[])
-{
-    // check if "login" is within the user-specified options->logins
-    for (size_t i = 0; i < options->logins_count; i++)
-    {
-        if (strcmp(options->logins[i], login) == 0)
-        {
-            return 0; // ok
-        }
-    }
-
-    return 1; // continue
-}
-
 int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given)
 {
     int login_records_file;
+    // filter for the user-specified file
     if (options_given->filename)
     {
         login_records_file = open(options->filename, O_RDONLY);
@@ -313,19 +293,11 @@ int fill_login_records(Login_Records *login_records, Options *options, Options_G
         return -1;
     }
     struct utmp login_record_info;
-    int check_record_result, check_login_result;
+    int check_record_result;
 
     // go through every login record in the file
     while (read(login_records_file, &login_record_info, sizeof(struct utmp)))
     {
-        if (options_given->logins)
-        {
-            check_login_result = check_login(options, login_record_info.ut_user);
-            if (check_login_result == 1)
-            {
-                continue;
-            }
-        }
         check_record_result = check_record_type(login_records, &login_record_info);
         if (check_record_result == 1)
         {
@@ -342,14 +314,29 @@ int fill_login_records(Login_Records *login_records, Options *options, Options_G
     return 0;
 }
 
+int check_login(Options *options, const char login[])
+{
+    // check if "login" is within the user-specified options->logins
+    for (size_t i = 0; i < options->logins_count; i++)
+    {
+        if (strcmp(options->logins[i], login) == 0)
+        {
+            return 0; // ok
+        }
+    }
+
+    return 1; // continue
+}
+
 int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records,
                          Options *options, Options_Given *options_given)
 {
     char current_date[DATE_SIZE] = "";
     char current_time[TIME_SIZE] = "";
+    int check_login_result;
 
-    // TODO: do date and time filtering here
-    for (size_t record = 0; record < login_records->count; record++)
+    // TODO: do date, time, and logins filtering here
+    for (size_t i = 0; i < login_records->count; i++)
     {
         if (options_given->date)
         {
@@ -360,6 +347,7 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
                 continue;
             }
         }
+
         if (options_given->time)
         {
             // time is specified but date is not: default to current date
@@ -368,6 +356,23 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
                 continue;
             }
         }
+
+        // filter for the user-specified logins
+        if (options_given->logins)
+        {
+            check_login_result = check_login(options, login_records->records[i].login);
+            if (check_login_result == 1)
+            {
+                continue;
+            }
+        }
+
+        if (login_records_mem(login_records) == -1)
+        {
+            return -1; // error
+        }
+        login_records_ft->records[login_records_ft->count] = login_records->records[i];
+        login_records_ft->count++;
     }
 
     return 0;
