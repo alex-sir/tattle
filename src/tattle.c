@@ -7,7 +7,7 @@
 #include <stdio.h>  // for fprintf()
 #include <stdlib.h> // for exit, malloc(), qsort()
 #include <unistd.h> // for getopt()
-#include <string.h> // for strncpy()
+#include <string.h> // for strncpy(), strcmp()
 
 #include "options.h"
 #include "helpers.h"
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
         // filename argument given after a space (e.g. -f file.txt)
-        if (options_given.filename && options.filename[0] == '\0' && optind < argc)
+        if (options_given.filename && optind < argc && strcmp(options.filename, DEFAULT_FILENAME) == 0)
         {
             strncpy(options.filename, argv[optind], PATHNAME_MAX);
         }

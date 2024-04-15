@@ -32,9 +32,9 @@
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-// #define DEFAULT_FILENAME "/var/log/wtmp"
+#define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
