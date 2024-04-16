@@ -23,6 +23,11 @@ int main(int argc, char *argv[])
     }
 
     Login_Records login_records = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
+    if (login_records.records == NULL)
+    {
+        print_err();
+        exit(EXIT_FAILURE);
+    }
     // command-line options are given by the user
     if (argc > 1)
     {
@@ -73,6 +78,13 @@ int main(int argc, char *argv[])
         if (options_given.date || options_given.time || options_given.logins)
         {
             Login_Records login_records_ft = {(Login_Record *)malloc(LOGIN_RECORDS_NUM * sizeof(Login_Record)), 0};
+            if (login_records_ft.records == NULL)
+            {
+                print_err();
+                free(login_records.records);
+                free_logins(&options);
+                exit(EXIT_FAILURE);
+            }
             filter_login_records(&login_records_ft, &login_records, &options, &options_given);
             qsort(login_records_ft.records, login_records_ft.count, sizeof(Login_Record), compare_log_on_times);
             print_records(&login_records_ft);

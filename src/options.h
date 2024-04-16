@@ -32,16 +32,13 @@
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-#define DEFAULT_FILENAME "/var/log/wtmp"
+// #define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
 
-// default spacing values when printing out login records
-#define PRINT_RECORDS_LOGIN_D 18
-#define PRINT_RECORDS_TTY_D 6
 #define PRINT_RECORDS_SPACING 2
 
 // 0 = option not given by user, 1 = option given by user
@@ -73,6 +70,7 @@ typedef struct
     char from_host[UT_HOSTSIZE];
     int is_pending; // indicates whether a corresponding log off has been found (DEAD_PROCESS or BOOT_TIME)
     time_t log_on_time;
+    time_t log_off_time;
 } Login_Record;
 
 // holds a list of Login_Record
@@ -216,9 +214,10 @@ extern int check_date_filter(Login_Record *login_record, const time_t time_optio
  *
  * @param login_record address of a Login_Record struct: login record to check
  * @param time_option time of the user-specified time
+ * @param date_start starting time (midnight) of the date used for filtering
  * @return int 0 = login record ok | 1 = login record filtered
  */
-extern int check_time_filter(Login_Record *login_record, const time_t time_option);
+extern int check_time_filter(Login_Record *login_record, const time_t time_option, const time_t date_start);
 /**
  * @brief check if a login on a record is within the user-specified logins
  *

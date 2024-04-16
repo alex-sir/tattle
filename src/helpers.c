@@ -70,14 +70,14 @@ void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *log
         }
     }
 
-    // add default sizes if none are found
-    if (login_size == 0)
+    // set default sizes if they are too small
+    if (login_size < 5)
     {
-        login_records_sizes->login_max += PRINT_RECORDS_LOGIN_D;
+        login_records_sizes->login_max = 5;
     }
-    if (tty_size == 0)
+    if (tty_size < 3)
     {
-        login_records_sizes->tty_max += PRINT_RECORDS_TTY_D;
+        login_records_sizes->tty_max = 3;
     }
 
     // add padding to make the column separations more clear
