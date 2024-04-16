@@ -32,9 +32,9 @@
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-// #define DEFAULT_FILENAME "/var/log/wtmp"
+#define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
@@ -214,10 +214,9 @@ extern int check_date_filter(Login_Record *login_record, const time_t time_optio
  *
  * @param login_record address of a Login_Record struct: login record to check
  * @param time_option time of the user-specified time
- * @param date_start starting time (midnight) of the date used for filtering
  * @return int 0 = login record ok | 1 = login record filtered
  */
-extern int check_time_filter(Login_Record *login_record, const time_t time_option, const time_t date_start);
+extern int check_time_filter(Login_Record *login_record, const time_t time_option);
 /**
  * @brief check if a login on a record is within the user-specified logins
  *

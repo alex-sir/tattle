@@ -325,7 +325,7 @@ int fill_login_records(Login_Records *login_records, Options *options, Options_G
 int check_date_filter(Login_Record *login_record, const time_t time_option)
 {
     // 86400 seconds in one day, 86399 = 11:59 PM
-    time_t time_option_day_end = time_option + 86400;
+    time_t time_option_day_end = time_option + 86399;
 
     // log on
     char current_lon[LOG_ON_SIZE];
@@ -359,33 +359,48 @@ int check_date_filter(Login_Record *login_record, const time_t time_option)
             return 1; // continue
         }
     }
-    // FIXME: idk some bullshit
-    if (login_record->is_pending && time_current_lon > time_option_day_end - 1)
+    if (login_record->is_pending && time_current_lon > time_option_day_end)
     {
-        return 1;
+        return 1; // continue
     }
 
     return 0; // ok
 }
 
-int check_time_filter(Login_Record *login_record, const time_t time_option, const time_t current_date_start)
+int check_time_filter(Login_Record *login_record, const time_t time_option)
 {
-    time_t time_option_day_end = current_date_start + 86399;
+    // log on
+    char current_lon[LOG_ON_SIZE];
+    struct tm tm_current_lon;
+    memset(&tm_current_lon, 0, sizeof(struct tm));
+    time_t time_current_lon;
 
-    char current_log_on[LOG_ON_SIZE];
-    strncpy(current_log_on, login_record->log_on, LOG_ON_SIZE);
+    strncpy(current_lon, login_record->log_on, LOG_ON_SIZE);
+    strptime(current_lon, "%D %R", &tm_current_lon);
+    time_current_lon = mktime(&tm_current_lon);
 
-    struct tm tm_current;
-    memset(&tm_current, 0, sizeof(struct tm));
+    // log off
+    char current_loff[LOG_ON_SIZE];
+    struct tm tm_current_loff;
+    memset(&tm_current_loff, 0, sizeof(struct tm));
+    time_t time_current_loff;
 
-    time_t time_current;
-    strptime(current_log_on, "%D %R", &tm_current);
-    time_current = mktime(&tm_current);
-
-    // report all logins active on the user-specified time
-    if (time_current < time_option || time_current > time_option_day_end)
+    if (!login_record->is_pending)
     {
-        return 1;
+        strncpy(current_loff, login_record->log_off, LOG_ON_SIZE);
+        strptime(current_loff, "%D %R", &tm_current_loff);
+        time_current_loff = mktime(&tm_current_loff);
+
+        // report all logins active on the user-specified time
+        if (time_current_lon > time_option || time_current_loff < time_option)
+        {
+            return 1; // continue
+        }
+    }
+
+    if (time_current_lon > time_option && !login_record->is_pending)
+    {
+        return 1; // continue
     }
 
     return 0; // ok
@@ -412,7 +427,6 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
 
     char log_on_option[LOG_ON_SIZE];
     char current_date[DATE_SIZE];
-    time_t current_date_start;
     // use the user-specified date
     if (options_given->date)
     {
@@ -424,11 +438,6 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
         struct tm *current_local_time = localtime(&current_time);
         strftime(current_date, sizeof(current_date), "%D", current_local_time);
         strncpy(log_on_option, current_date, DATE_SIZE);
-
-        struct tm tm_current;
-        memset(&tm_current, 0, sizeof(struct tm));
-        strptime(current_date, "%D", &tm_current);
-        current_date_start = mktime(&tm_current);
     }
     strncat(log_on_option, " ", 2);
     strncat(log_on_option, options->time, TIME_SIZE);
@@ -458,16 +467,7 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
         // time filtering
         if (options_given->time)
         {
-            // work with the user-specified date start time
-            if (options_given->date)
-            {
-                check_time_result = check_time_filter(&login_records->records[i], time_time, time_date);
-            }
-            else // work with the current date start time
-            {
-                check_time_result = check_time_filter(&login_records->records[i], time_time, current_date_start);
-            }
-
+            check_time_result = check_time_filter(&login_records->records[i], time_time);
             if (check_time_result == 1)
             {
                 continue;
