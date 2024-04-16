@@ -45,7 +45,7 @@ int login_records_mem(Login_Records *login_records)
 
 void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *login_records)
 {
-    size_t login_size = 0, tty_size = 0, from_host_size = 0;
+    int login_size = 0, tty_size = 0, from_host_size = 0;
     for (size_t record = 0; record < login_records->count; record++)
     {
         // login
@@ -69,6 +69,17 @@ void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *log
             login_records_sizes->from_host_max = from_host_size;
         }
     }
+
+    // add default sizes if none are found
+    if (login_size == 0)
+    {
+        login_records_sizes->login_max += PRINT_RECORDS_LOGIN_D;
+    }
+    if (tty_size == 0)
+    {
+        login_records_sizes->tty_max += PRINT_RECORDS_TTY_D;
+    }
+
     // add padding to make the column separations more clear
     login_records_sizes->login_max += PRINT_RECORDS_SPACING;
     login_records_sizes->tty_max += PRINT_RECORDS_SPACING;
@@ -79,24 +90,31 @@ void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *log
 
 void print_records(Login_Records *login_records)
 {
-    Login_Records_Sizes login_records_sizes = {0, 0, 0, 0, 0};
-    find_max_sizes(&login_records_sizes, login_records);
-
-    printf("%-*s", login_records_sizes.login_max, "login");
-    printf("%-*s", login_records_sizes.tty_max, "tty");
-    printf("%-*s", login_records_sizes.log_on_max, "log on");
-    printf("%-*s", login_records_sizes.log_off_max, "log off");
-    // printf("%-*s\n", login_records_sizes.from_host_max, "from host");
-    printf("%s\n", "from host");
-    // output a row containing the information for a login record
-    for (size_t record = 0; record < login_records->count; record++)
+    if (login_records->count == 0)
     {
-        printf("%-*s", login_records_sizes.login_max, login_records->records[record].login);
-        printf("%-*s", login_records_sizes.tty_max, login_records->records[record].tty);
-        printf("%-*s", login_records_sizes.log_on_max, login_records->records[record].log_on);
-        printf("%-*s", login_records_sizes.log_off_max, login_records->records[record].log_off);
-        // printf("%-*s\n", login_records_sizes.from_host_max, login_record->from_host);
-        printf("%s\n", login_records->records[record].from_host);
+        printf("tattle: no login records found\n");
+    }
+    else
+    {
+        Login_Records_Sizes login_records_sizes = {0, 0, 0, 0, 0};
+        find_max_sizes(&login_records_sizes, login_records);
+
+        printf("%-*s", login_records_sizes.login_max, "login");
+        printf("%-*s", login_records_sizes.tty_max, "tty");
+        printf("%-*s", login_records_sizes.log_on_max, "log on");
+        printf("%-*s", login_records_sizes.log_off_max, "log off");
+        // printf("%-*s\n", login_records_sizes.from_host_max, "from host");
+        printf("%s\n", "from host");
+        // output a row containing the information for a login record
+        for (size_t record = 0; record < login_records->count; record++)
+        {
+            printf("%-*s", login_records_sizes.login_max, login_records->records[record].login);
+            printf("%-*s", login_records_sizes.tty_max, login_records->records[record].tty);
+            printf("%-*s", login_records_sizes.log_on_max, login_records->records[record].log_on);
+            printf("%-*s", login_records_sizes.log_off_max, login_records->records[record].log_off);
+            // printf("%-*s\n", login_records_sizes.from_host_max, login_record->from_host);
+            printf("%s\n", login_records->records[record].from_host);
+        }
     }
 }
 

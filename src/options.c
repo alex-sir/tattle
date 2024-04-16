@@ -194,8 +194,8 @@ void fill_record(Login_Record *record, struct utmp *login_record_info)
     strncpy(record->from_host, login_record_info->ut_host, UT_HOSTSIZE);
     record->is_pending = 1;
 
-    time_t tv_sec_time = login_record_info->ut_tv.tv_sec;
-    record->log_on_time = tv_sec_time;
+    time_t tv_sec_lon = login_record_info->ut_tv.tv_sec;
+    record->log_on_time = tv_sec_lon;
 }
 
 void find_log_off(Login_Records *login_records, struct utmp *login_record_info)
@@ -318,66 +318,46 @@ int fill_login_records(Login_Records *login_records, Options *options, Options_G
     return 0;
 }
 
-int check_date_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[])
+int check_date_filter(Login_Record *login_record, const time_t time_option)
 {
     char current_log_on[LOG_ON_SIZE];
     char *current_date;
-    strncpy(current_log_on, log_on, LOG_ON_SIZE);
+    strncpy(current_log_on, login_record->log_on, LOG_ON_SIZE);
     current_date = strtok(current_log_on, " ");
 
-    struct tm tm_option, tm_current;
-    memset(&tm_option, 0, sizeof(struct tm));
+    struct tm tm_current;
     memset(&tm_current, 0, sizeof(struct tm));
 
-    // FIXME: records that are "(still logged in)" but at a future date show up yet they shouldn't (look at handout)
-    time_t time_option, time_current;
-    strptime(options->date, "%D", &tm_option);
-    time_option = mktime(&tm_option);
+    time_t time_current;
     strptime(current_date, "%D", &tm_current);
     time_current = mktime(&tm_current);
 
-    // date is specified but time is not: report all logins active on that date
-    if (time_option != time_current &&
-        strcmp(log_off, DEFAULT_LOG_OFF) != 0)
+    // report all logins active on the user-specified date
+    if (time_current > time_option ||
+        (time_option != time_current && !login_record->is_pending))
     {
         return 1; // continue
-    }
-
-    // date AND time is specified
-    if (options_given->time)
-    {
     }
 
     return 0; // ok
 }
 
-int check_time_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[])
+int check_time_filter(Login_Record *login_record, const time_t time_option)
 {
     char current_log_on[LOG_ON_SIZE];
-    char *current_time;
-    strncpy(current_log_on, log_on, LOG_ON_SIZE);
-    strtok(current_log_on, " ");
-    current_time = strtok(NULL, "\0");
+    strncpy(current_log_on, login_record->log_on, LOG_ON_SIZE);
 
-    struct tm tm_option, tm_current;
-    memset(&tm_option, 0, sizeof(struct tm));
+    struct tm tm_current;
     memset(&tm_current, 0, sizeof(struct tm));
 
-    time_t time_option, time_current;
-    strptime(options->time, "%D", &tm_option);
-    time_option = mktime(&tm_option);
-    strptime(current_time, "%D", &tm_current);
+    time_t time_current;
+    strptime(current_log_on, "%D %R", &tm_current);
     time_current = mktime(&tm_current);
 
-    // time is specified but date is not: default to current date
+    // report all logins active on the user-specified time
     if (time_option != time_current)
     {
         return 1; // continue
-    }
-
-    // time AND date are specified
-    if (options_given->date)
-    {
     }
 
     return 0; // ok
@@ -402,30 +382,56 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
 {
     int check_date_result = 0, check_time_result = 0, check_login_result = 0;
 
-    // TODO: do date, time, and logins filtering
+    char log_on_option[LOG_ON_SIZE];
+    // use the user-specified date
+    if (options_given->date)
+    {
+        strncpy(log_on_option, options->date, DATE_SIZE);
+    }
+    else // default: use the current date
+    {
+        char current_date[DATE_SIZE];
+        time_t current_time = time(NULL);
+        struct tm *current_local_time = localtime(&current_time);
+        strftime(current_date, sizeof(current_date), "%D", current_local_time);
+        strncpy(log_on_option, current_date, DATE_SIZE);
+    }
+    strncat(log_on_option, " ", 2);
+    strncat(log_on_option, options->time, TIME_SIZE);
+
+    struct tm tm_date, tm_time;
+    memset(&tm_date, 0, sizeof(struct tm));
+    memset(&tm_time, 0, sizeof(struct tm));
+
+    time_t time_date, time_time;
+    strptime(options->date, "%D", &tm_date);
+    time_date = mktime(&tm_date);
+    strptime(log_on_option, "%D %R", &tm_time);
+    time_time = mktime(&tm_time);
+
     for (size_t i = 0; i < login_records->count; i++)
     {
+        // date filtering
         if (options_given->date)
         {
-            check_date_result = check_date_filter(options, options_given, login_records->records[i].log_on,
-                                                  login_records->records[i].log_off);
+            check_date_result = check_date_filter(&login_records->records[i], time_date);
             if (check_date_result == 1)
             {
                 continue;
             }
         }
 
+        // time filtering
         if (options_given->time)
         {
-            check_time_result = check_time_filter(options, options_given, login_records->records[i].log_on,
-                                                  login_records->records[i].log_off);
+            check_time_result = check_time_filter(&login_records->records[i], time_time);
             if (check_time_result == 1)
             {
                 continue;
             }
         }
 
-        // filter for the user-specified logins
+        // logins filtering
         if (options_given->logins)
         {
             check_login_result = check_login_filter(options, login_records->records[i].login);

@@ -12,10 +12,10 @@
 
 #include <stdio.h>  // for printf(), fprintf()
 #include <stdlib.h> // for realloc(), getsubopt()
-#include <string.h> // for strncpy(), memset(), strcmp(), strtok()
+#include <string.h> // for strncpy(), memset(), strcmp(), strtok(), strcat()
 #include <fcntl.h>  // for open()
 #include <unistd.h> // for close(), read()
-#include <time.h>   // for struct tm, strptime(), strftime(), localtime()
+#include <time.h>   // for struct tm, strptime(), strftime(), localtime(), time()
 #include <utmp.h>   // for struct utmp
 #include <pwd.h>    // for getpwnam()
 #include <errno.h>  // for errno
@@ -32,13 +32,16 @@
 #define LOGINS_NUM 100
 #define LOGIN_RECORDS_NUM 100
 
-// #define DEFAULT_FILENAME "/var/log/wtmp"
+#define DEFAULT_FILENAME "/var/log/wtmp"
 // TEMP: only for testing purposes
-#define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
+// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
 // #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
 
+// default spacing values when printing out login records
+#define PRINT_RECORDS_LOGIN_D 18
+#define PRINT_RECORDS_TTY_D 6
 #define PRINT_RECORDS_SPACING 2
 
 // 0 = option not given by user, 1 = option given by user
@@ -200,8 +203,22 @@ extern int fill_login_records_d(Login_Records *login_records);
  * @return int 0 = run success | -1 = run failure
  */
 extern int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given);
-extern int check_date_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[]);
-extern int check_time_filter(Options *options, Options_Given *options_given, const char log_on[], const char log_off[]);
+/**
+ * @brief filter a login record based on a user-specified date
+ *
+ * @param login_record address of a Login_Record struct: login record to check
+ * @param time_option time of the user-specified date
+ * @return int 0 = login record ok | 1 = login record filtered
+ */
+extern int check_date_filter(Login_Record *login_record, const time_t time_option);
+/**
+ * @brief filter a login record based on a user-specified time
+ *
+ * @param login_record address of a Login_Record struct: login record to check
+ * @param time_option time of the user-specified time
+ * @return int 0 = login record ok | 1 = login record filtered
+ */
+extern int check_time_filter(Login_Record *login_record, const time_t time_option);
 /**
  * @brief check if a login on a record is within the user-specified logins
  *
@@ -219,6 +236,7 @@ extern int check_login_filter(Options *options, const char login[]);
  * @param options_given address of an Options_Given struct containing which options the user specified
  * @return int -1 = error occurred | 0 = success
  */
-extern int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records, Options *options, Options_Given *options_given);
+extern int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records,
+                                Options *options, Options_Given *options_given);
 
 #endif
