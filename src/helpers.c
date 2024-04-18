@@ -16,14 +16,14 @@ void usage(const char *progname)
     printf("usage: %s [-d date] [-f filename] [-t time] [-u login[,login]*]\n", progname);
 }
 
-void free_logins(Options *options)
+void free_logins(Arguments *arguments)
 {
-    for (size_t login = 0; login < options->logins_count; login++)
+    for (size_t login = 0; login < arguments->logins_count; login++)
     {
-        free(options->logins[login]);
+        free(arguments->logins[login]);
     }
 
-    free(options->logins);
+    free(arguments->logins);
 }
 
 int login_records_mem(Login_Records *login_records)
@@ -71,13 +71,13 @@ void find_max_sizes(Login_Records_Sizes *login_records_sizes, Login_Records *log
     }
 
     // set default sizes if they are too small
-    if (login_size < 5)
+    if (login_size < LOGIN_SPACING_DEFAULT)
     {
-        login_records_sizes->login_max = 5;
+        login_records_sizes->login_max = LOGIN_SPACING_DEFAULT;
     }
-    if (tty_size < 3)
+    if (tty_size < TTY_SPACING_DEFAULT)
     {
-        login_records_sizes->tty_max = 3;
+        login_records_sizes->tty_max = TTY_SPACING_DEFAULT;
     }
 
     // add padding to make the column separations more clear

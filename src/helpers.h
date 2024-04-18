@@ -28,11 +28,11 @@ extern void print_err(void);
  */
 extern void usage(const char *progname);
 /**
- * @brief free all memory for logins in an Options struct
+ * @brief free all memory for logins in an Arguments struct
  *
- * @param options address of an Options struct
+ * @param arguments address of an Arguments struct
  */
-extern void free_logins(Options *options);
+extern void free_logins(Arguments *arguments);
 /**
  * @brief check if a Login_Records struct needs to have its dynamic memory reallocated
  *

@@ -31,10 +31,10 @@ int main(int argc, char *argv[])
     // command-line options are given by the user
     if (argc > 1)
     {
-        // values for the options
+        // values for the options & arguments
         Options_Given options_given = {0, 0, 0, 0};
-        Options options;
-        if (options_init(&options) == -1)
+        Arguments arguments;
+        if (arguments_init(&arguments) == -1)
         {
             print_err();
             free(login_records.records);
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         // parse all options given
         while ((opt = getopt(argc, argv, "d:f::t:u:")) != -1)
         {
-            if (check_options(&options_given, &options, opt, optarg) == 0)
+            if (check_options(&options_given, &arguments, opt, optarg) == 0)
             {
                 continue;
             }
@@ -57,20 +57,20 @@ int main(int argc, char *argv[])
                 usage(argv[0]);
             }
             free(login_records.records);
-            free_logins(&options);
+            free_logins(&arguments);
             exit(EXIT_FAILURE);
         }
         // filename argument given after a space (e.g. -f file.txt)
-        if (options_given.filename && optind < argc && strcmp(options.filename, DEFAULT_FILENAME) == 0)
+        if (options_given.filename && optind < argc && strcmp(arguments.filename, DEFAULT_FILENAME) == 0)
         {
-            strncpy(options.filename, argv[optind], PATHNAME_MAX);
+            strncpy(arguments.filename, argv[optind], PATHNAME_MAX);
         }
 
         // go through the options the user specified
-        if (fill_login_records(&login_records, &options, &options_given) == -1)
+        if (fill_login_records(&login_records, &arguments, &options_given) == -1)
         {
             free(login_records.records);
-            free_logins(&options);
+            free_logins(&arguments);
             exit(EXIT_FAILURE);
         }
 
@@ -82,10 +82,10 @@ int main(int argc, char *argv[])
             {
                 print_err();
                 free(login_records.records);
-                free_logins(&options);
+                free_logins(&arguments);
                 exit(EXIT_FAILURE);
             }
-            filter_login_records(&login_records_ft, &login_records, &options, &options_given);
+            filter_login_records(&login_records_ft, &login_records, &arguments, &options_given);
             qsort(login_records_ft.records, login_records_ft.count, sizeof(Login_Record), compare_log_on_times);
             print_records(&login_records_ft);
             free(login_records_ft.records);
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         }
 
         free(login_records.records);
-        free_logins(&options);
+        free_logins(&arguments);
     }
     else // default option: list all available records for all users on all dates and times
     {

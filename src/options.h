@@ -33,12 +33,11 @@
 #define LOGIN_RECORDS_NUM 100
 
 #define DEFAULT_FILENAME "/var/log/wtmp"
-// TEMP: only for testing purposes
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp"
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/wtmp_elec_2022_04_27"
-// #define DEFAULT_FILENAME "/home/axc/Dev/cpts360/pa/tattle/test/Oct31_2022_wtmp"
 #define DEFAULT_LOG_OFF "(still logged in)"
 
+// spacing when printing out all the login records
+#define LOGIN_SPACING_DEFAULT 5
+#define TTY_SPACING_DEFAULT 3
 #define PRINT_RECORDS_SPACING 2
 
 // 0 = option not given by user, 1 = option given by user
@@ -58,7 +57,7 @@ typedef struct
     char time[TIME_SIZE];
     char **logins;
     int logins_count;
-} Options;
+} Arguments;
 
 // contains all relevant information to print out for a user login
 typedef struct
@@ -95,12 +94,12 @@ typedef struct
 #include "helpers.h"
 
 /**
- * @brief initialize an Options struct with default values
+ * @brief initialize an Arguments struct with default values
  *
- * @param options address of an Options struct
+ * @param arguments address of an Arguments struct
  * @return int 0 = init success | -1 = init failure
  */
-extern int options_init(Options *options);
+extern int arguments_init(Arguments *arguments);
 /**
  * @brief validate the format of a date string as mm/dd/yy
  *
@@ -126,20 +125,20 @@ extern int fill_logins(char ***logins, char *optarg);
 /**
  * @brief verify that the list of user-specified logins are real logins on the system
  *
- * @param options address to an Options struct
+ * @param arguments address to an Arguments struct
  * @return int -1 = invalid login found | 0 = logins list ok
  */
-extern int verify_logins(Options *options);
+extern int verify_logins(Arguments *arguments);
 /**
  * @brief check all command-line options and corresponding arguments specified by the user
  *
  * @param options_given address of an Options_Given struct containing which options are specified
- * @param options address of an Options struct that will get filled with the values of the specified options
+ * @param arguments address of an Arguments struct that will get filled with the values of the specified arguments
  * @param opt option specified
  * @param optarg argument of the option specfied "opt"
  * @return int 0 = options check success | -1 = options check failure
  */
-extern int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg);
+extern int check_options(Options_Given *options_given, Arguments *arguments, const char opt, char *optarg);
 /**
  * @brief check if a ut_user from a utmp record is valid for a login record
  *
@@ -196,11 +195,11 @@ extern int fill_login_records_d(Login_Records *login_records);
  *        find and fill the appropriate login records found in a wtmp file
  *
  * @param login_records address of a Login_Records struct to contain all login records
- * @param options address of an Options struct containing the options given by the user
+ * @param arguments address of an Arguments struct containing the arguments given by the user
  * @param options_given address of an Options_Given struct containing which options the user specified
  * @return int 0 = run success | -1 = run failure
  */
-extern int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given);
+extern int fill_login_records(Login_Records *login_records, Arguments *arguments, Options_Given *options_given);
 /**
  * @brief filter a login record based on a user-specified date
  *
@@ -220,21 +219,21 @@ extern int check_time_filter(Login_Record *login_record, const time_t time_optio
 /**
  * @brief check if a login on a record is within the user-specified logins
  *
- * @param options address to an Options struct
+ * @param arguments address to an Arguments struct
  * @param login login string to check
  * @return int 0 = login match found | 1 = no match found
  */
-extern int check_login_filter(Options *options, const char login[]);
+extern int check_login_filter(Arguments *arguments, const char login[]);
 /**
  * @brief filter login records based on user-specified options
  *
  * @param login_records_ft address of a Login_Records struct containing filtered login records from login_records
  * @param login_records address of a Login_Records struct containing all login records
- * @param options address of an Options struct containing the options given by the user
+ * @param arguments address of an Arguments struct containing the arguments given by the user
  * @param options_given address of an Options_Given struct containing which options the user specified
  * @return int -1 = error occurred | 0 = success
  */
 extern int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records,
-                                Options *options, Options_Given *options_given);
+                                Arguments *arguments, Options_Given *options_given);
 
 #endif

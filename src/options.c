@@ -6,17 +6,17 @@
 
 #include "options.h"
 
-int options_init(Options *options)
+int arguments_init(Arguments *arguments)
 {
-    strncpy(options->date, "", DATE_SIZE);
-    strncpy(options->filename, DEFAULT_FILENAME, PATHNAME_MAX);
-    strncpy(options->time, "", TIME_SIZE);
-    options->logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
-    if (options->logins == NULL)
+    strncpy(arguments->date, "", DATE_SIZE);
+    strncpy(arguments->filename, DEFAULT_FILENAME, PATHNAME_MAX);
+    strncpy(arguments->time, "", TIME_SIZE);
+    arguments->logins = (char **)malloc(LOGINS_NUM * sizeof(char *));
+    if (arguments->logins == NULL)
     {
         return -1;
     }
-    options->logins_count = 0;
+    arguments->logins_count = 0;
 
     return 0;
 }
@@ -80,14 +80,14 @@ int fill_logins(char ***logins, char *optarg)
     return logins_count;
 }
 
-int verify_logins(Options *options)
+int verify_logins(Arguments *arguments)
 {
-    for (size_t i = 0; i < options->logins_count; i++)
+    for (size_t i = 0; i < arguments->logins_count; i++)
     {
         // check that the login is a real login on the system
-        if (getpwnam(options->logins[i]) == NULL)
+        if (getpwnam(arguments->logins[i]) == NULL)
         {
-            fprintf(stderr, "tattle: user '%s' not found\n", options->logins[i]);
+            fprintf(stderr, "tattle: user '%s' not found\n", arguments->logins[i]);
             return -1; // error
         }
     }
@@ -95,7 +95,7 @@ int verify_logins(Options *options)
     return 0; // ok
 }
 
-int check_options(Options_Given *options_given, Options *options, const char opt, char *optarg)
+int check_options(Options_Given *options_given, Arguments *arguments, const char opt, char *optarg)
 {
     switch (opt)
     {
@@ -106,13 +106,13 @@ int check_options(Options_Given *options_given, Options *options, const char opt
             return -1;
         }
         options_given->date = 1;
-        strncpy(options->date, optarg, DATE_SIZE);
+        strncpy(arguments->date, optarg, DATE_SIZE);
         break;
     case 'f': // filename
         options_given->filename = 1;
         if (optarg)
         {
-            strncpy(options->filename, optarg, PATHNAME_MAX);
+            strncpy(arguments->filename, optarg, PATHNAME_MAX);
         }
         break;
     case 't': // time (HH:MM) (24-hour clock)
@@ -122,17 +122,17 @@ int check_options(Options_Given *options_given, Options *options, const char opt
             return -1;
         }
         options_given->time = 1;
-        strncpy(options->time, optarg, TIME_SIZE);
+        strncpy(arguments->time, optarg, TIME_SIZE);
         break;
     case 'u': // login(s) (user1,user2,user3)
         options_given->logins = 1;
-        options->logins_count = fill_logins(&options->logins, optarg);
-        if (options->logins_count == -1)
+        arguments->logins_count = fill_logins(&arguments->logins, optarg);
+        if (arguments->logins_count == -1)
         {
             print_err();
             return -1;
         }
-        if (verify_logins(options) == -1)
+        if (verify_logins(arguments) == -1)
         {
             return -1;
         }
@@ -221,6 +221,7 @@ void find_log_off(Login_Records *login_records, struct utmp *login_record_info)
 
 int check_record_type(Login_Records *login_records, struct utmp *login_record_info)
 {
+    // a log on is represented by a USER_PROCESS record
     // a log off can be represented by either a DEAD_PROCESS or BOOT_TIME record
     switch (login_record_info->ut_type)
     {
@@ -237,9 +238,6 @@ int check_record_type(Login_Records *login_records, struct utmp *login_record_in
         {
             return -1; // error
         }
-        // REM: watch out for a log on followed by another log on (with the same ut_line) with no intervening log off
-        // FIXME: this doesn't work, it gives false positives. maybe try doing at the end after finished with all the records?
-        // find_log_off(login_records, &login_record_info); // look for the rare case of a record with no log off
         fill_record(&(login_records->records[login_records->count]), login_record_info);
         login_records->count++;
         break;
@@ -283,13 +281,13 @@ int fill_login_records_d(Login_Records *login_records)
     return 0;
 }
 
-int fill_login_records(Login_Records *login_records, Options *options, Options_Given *options_given)
+int fill_login_records(Login_Records *login_records, Arguments *arguments, Options_Given *options_given)
 {
     int login_records_file;
     // filter for the user-specified file
     if (options_given->filename)
     {
-        login_records_file = open(options->filename, O_RDONLY);
+        login_records_file = open(arguments->filename, O_RDONLY);
     }
     else
     {
@@ -359,6 +357,7 @@ int check_date_filter(Login_Record *login_record, const time_t time_option)
             return 1; // continue
         }
     }
+    // check pending log ons
     if (login_record->is_pending && time_current_lon > time_option_day_end)
     {
         return 1; // continue
@@ -397,8 +396,8 @@ int check_time_filter(Login_Record *login_record, const time_t time_option)
             return 1; // continue
         }
     }
-
-    if (time_current_lon > time_option && !login_record->is_pending)
+    // check pending log ons
+    if (time_current_lon > time_option)
     {
         return 1; // continue
     }
@@ -406,12 +405,12 @@ int check_time_filter(Login_Record *login_record, const time_t time_option)
     return 0; // ok
 }
 
-int check_login_filter(Options *options, const char login[])
+int check_login_filter(Arguments *arguments, const char login[])
 {
-    // check if "login" is within the user-specified options->logins
-    for (size_t i = 0; i < options->logins_count; i++)
+    // check if "login" is within the user-specified arguments->logins
+    for (size_t i = 0; i < arguments->logins_count; i++)
     {
-        if (strcmp(options->logins[i], login) == 0)
+        if (strcmp(arguments->logins[i], login) == 0)
         {
             return 0; // ok
         }
@@ -421,7 +420,7 @@ int check_login_filter(Options *options, const char login[])
 }
 
 int filter_login_records(Login_Records *login_records_ft, Login_Records *login_records,
-                         Options *options, Options_Given *options_given)
+                         Arguments *arguments, Options_Given *options_given)
 {
     int check_date_result = 0, check_time_result = 0, check_login_result = 0;
 
@@ -430,7 +429,7 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
     // use the user-specified date
     if (options_given->date)
     {
-        strncpy(log_on_option, options->date, DATE_SIZE);
+        strncpy(log_on_option, arguments->date, DATE_SIZE);
     }
     else // default: use the current date
     {
@@ -440,14 +439,14 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
         strncpy(log_on_option, current_date, DATE_SIZE);
     }
     strncat(log_on_option, " ", 2);
-    strncat(log_on_option, options->time, TIME_SIZE);
+    strncat(log_on_option, arguments->time, TIME_SIZE);
 
     struct tm tm_date, tm_time;
     memset(&tm_date, 0, sizeof(struct tm));
     memset(&tm_time, 0, sizeof(struct tm));
 
     time_t time_date, time_time;
-    strptime(options->date, "%D", &tm_date);
+    strptime(arguments->date, "%D", &tm_date);
     time_date = mktime(&tm_date);
     strptime(log_on_option, "%D %R", &tm_time);
     time_time = mktime(&tm_time);
@@ -477,7 +476,7 @@ int filter_login_records(Login_Records *login_records_ft, Login_Records *login_r
         // logins filtering
         if (options_given->logins)
         {
-            check_login_result = check_login_filter(options, login_records->records[i].login);
+            check_login_result = check_login_filter(arguments, login_records->records[i].login);
             if (check_login_result == 1)
             {
                 continue;
