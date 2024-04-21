@@ -123,13 +123,6 @@ extern int check_time(const char *time);
  */
 extern int fill_logins(char ***logins, char *optarg);
 /**
- * @brief verify that the list of user-specified logins are real logins on the system
- *
- * @param arguments address to an Arguments struct
- * @return int -1 = invalid login found | 0 = logins list ok
- */
-extern int verify_logins(Arguments *arguments);
-/**
  * @brief check all command-line options and corresponding arguments specified by the user
  *
  * @param options_given address of an Options_Given struct containing which options are specified

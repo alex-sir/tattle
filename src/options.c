@@ -80,21 +80,6 @@ int fill_logins(char ***logins, char *optarg)
     return logins_count;
 }
 
-int verify_logins(Arguments *arguments)
-{
-    for (size_t i = 0; i < arguments->logins_count; i++)
-    {
-        // check that the login is a real login on the system
-        if (getpwnam(arguments->logins[i]) == NULL)
-        {
-            fprintf(stderr, "tattle: user '%s' not found\n", arguments->logins[i]);
-            return -1; // error
-        }
-    }
-
-    return 0; // ok
-}
-
 int check_options(Options_Given *options_given, Arguments *arguments, const char opt, char *optarg)
 {
     switch (opt)
@@ -130,10 +115,6 @@ int check_options(Options_Given *options_given, Arguments *arguments, const char
         if (arguments->logins_count == -1)
         {
             print_err();
-            return -1;
-        }
-        if (verify_logins(arguments) == -1)
-        {
             return -1;
         }
         break;
